@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/style.css?v=2.2">
 </head>
 <body>
     <!-- Background Glow Effects -->
@@ -210,8 +210,77 @@
         <footer class="app-footer">
             <p>Hệ thống gợi ý học bổng thông minh © 2026 | Công nghệ: <strong>PostgreSQL 17, pgvector, HNSW, Python, Flask</strong></p>
         </footer>
+    <!-- Modal Xem Chi Tiết Đầy Đủ Học Bổng -->
+    <div id="scholarship-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-card glass-panel">
+            <div class="modal-header">
+                <span class="modal-source-badge" id="modal-source">🌐 Nguồn: Ybox.vn</span>
+                <button type="button" class="btn-close-modal" id="btn-close-modal" aria-label="Đóng">✕</button>
+            </div>
+            
+            <h2 id="modal-title" class="modal-title">Tên học bổng chi tiết</h2>
+            
+            <div class="modal-meta-grid">
+                <div class="modal-meta-box">
+                    <span class="meta-icon">📍</span>
+                    <div>
+                        <div class="meta-label">Quốc gia</div>
+                        <div class="meta-val" id="modal-country">Hàn Quốc</div>
+                    </div>
+                </div>
+                <div class="modal-meta-box">
+                    <span class="meta-icon">🎓</span>
+                    <div>
+                        <div class="meta-label">Bậc học</div>
+                        <div class="meta-val" id="modal-degree">Thạc sĩ</div>
+                    </div>
+                </div>
+                <div class="modal-meta-box">
+                    <span class="meta-icon">⏰</span>
+                    <div>
+                        <div class="meta-label">Hạn nộp hồ sơ</div>
+                        <div class="meta-val highlight" id="modal-deadline">15/12/2026</div>
+                    </div>
+                </div>
+                <div class="modal-meta-box">
+                    <span class="meta-icon">📚</span>
+                    <div>
+                        <div class="meta-label">Chuyên ngành</div>
+                        <div class="meta-val" id="modal-major">Mọi ngành</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body-content">
+                <div class="modal-section">
+                    <h4>💰 Mức tài trợ & Chi tiết quyền lợi:</h4>
+                    <div class="modal-text-box" id="modal-funding"></div>
+                </div>
+
+                <div class="modal-section">
+                    <h4>📊 Tiêu chuẩn điều kiện sàn:</h4>
+                    <div class="modal-criteria-pills" id="modal-criteria"></div>
+                </div>
+
+                <div class="modal-section">
+                    <h4>📑 Hồ sơ cần chuẩn bị (Checklist):</h4>
+                    <div class="modal-text-box" id="modal-checklist"></div>
+                </div>
+
+                <div class="modal-section">
+                    <h4>⚖️ Cam kết & Ràng buộc sau nhận học bổng:</h4>
+                    <div class="modal-text-box" id="modal-commitment"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <a id="modal-source-link" href="#" target="_blank" class="btn-modal-visit">
+                    🚀 Mở bài viết gốc trên trang nguồn cào ↗
+                </a>
+            </div>
+        </div>
     </div>
 
-    <script src="/static/script.js"></script>
+    <script src="/static/script.js?v=2.2"></script>
 </body>
 </html>

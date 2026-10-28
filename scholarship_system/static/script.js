@@ -190,28 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             // Trường hợp hồ sơ ĐẠT CHUẨN: Hiển thị Top 1 -> Top N
             data.matched_scholarships.forEach((item, idx) => {
-                const isTop1 = idx === 0;
-                const card = document.createElement("div");
-                card.className = `scholarship-card ${isTop1 ? "card-top-1" : ""}`;
-                card.innerHTML = `
-                    ${isTop1 ? '<div class="card-top-badge">👑 ƯU TIÊN TOP 1</div>' : '<div class="card-top-badge" style="background: #10b981;">✓ ĐẠT CHUẨN</div>'}
-                    <div class="card-title-row">
-                        <div class="rank-number">#${idx + 1}</div>
-                        <div class="sch-title">${item.title}</div>
-                    </div>
-                    <div class="card-meta-tags">
-                        <span class="meta-tag tag-country">📍 ${item.country || "Quốc tế"}</span>
-                        <span class="meta-tag tag-score">★ Điểm Tổng: ${item.final_score}/100</span>
-                        <span class="meta-tag tag-vector">⚡ Khớp Vector: ${item.sim_pct}%</span>
-                    </div>
-                    <div class="sch-benefits">
-                        <strong>Quyền lợi:</strong> ${item.funding || "Toàn phần / Trợ cấp"}
-                    </div>
-                    <div class="card-footer">
-                        <span class="criteria-text">Yêu cầu sàn: <strong>GPA ≥ ${item.min_gpa} | IELTS ≥ ${item.min_ielts}</strong></span>
-                        ${item.link && item.link !== '#' ? `<a href="${item.link}" target="_blank" class="btn-detail">Xem chi tiết ↗</a>` : ''}
-                    </div>
-                `;
+                const card = createScholarshipCard(item, idx, "matched", userGpa, userIelts);
                 matchedList.appendChild(card);
             });
         }
@@ -253,32 +232,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (data.ineligible_scholarships && data.ineligible_scholarships.length > 0) {
                 ineligibleSection.style.display = "block";
                 data.ineligible_scholarships.forEach((item, idx) => {
-                    const card = document.createElement("div");
-                    card.className = "scholarship-card";
-                    card.style.borderColor = "rgba(239, 68, 68, 0.4)";
-                    card.style.background = "linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(15, 23, 42, 0.7))";
-                    
-                    const gapTexts = item.gaps ? item.gaps.map(g => `<span style="color: #fca5a5; font-weight: 600;">! ${g.text}</span>`).join(" &nbsp;|&nbsp; ") : "";
-
-                    card.innerHTML = `
-                        <div class="card-top-badge" style="background: #ef4444; box-shadow: 0 0 12px var(--rose-glow);">❌ BỊ LOẠI VÒNG HỒ SƠ</div>
-                        <div class="card-title-row">
-                            <div class="rank-number" style="color: #f87171; background: rgba(239, 68, 68, 0.15);">#${idx + 1}</div>
-                            <div class="sch-title" style="color: #fca5a5;">${item.title}</div>
-                        </div>
-                        <div class="card-meta-tags">
-                            <span class="meta-tag tag-country">📍 ${item.country || "Quốc tế"}</span>
-                            <span class="meta-tag" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5;">Chưa đạt chuẩn sàn</span>
-                            <span class="meta-tag tag-vector">⚡ Khớp Chuyên Môn: ${item.sim_pct}%</span>
-                        </div>
-                        <div class="sch-benefits" style="background: rgba(239, 68, 68, 0.1); padding: 8px 12px; border-radius: 6px; border-left: 3px solid var(--rose);">
-                            <strong>Lý do bị loại:</strong> ${gapTexts}
-                        </div>
-                        <div class="card-footer">
-                            <span class="criteria-text">Yêu cầu sàn: <strong>GPA ≥ ${item.min_gpa} | IELTS ≥ ${item.min_ielts}</strong></span>
-                            ${item.link && item.link !== '#' ? `<a href="${item.link}" target="_blank" class="btn-detail">Xem tiêu chí gốc ↗</a>` : ''}
-                        </div>
-                    `;
+                    const card = createScholarshipCard(item, idx, "ineligible", userGpa, userIelts);
                     ineligibleList.appendChild(card);
                 });
             } else {
@@ -292,29 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (data.safety_alternatives && data.safety_alternatives.length > 0) {
             data.safety_alternatives.forEach((item, idx) => {
-                const card = document.createElement("div");
-                card.className = "scholarship-card";
-                card.style.borderColor = "rgba(16, 185, 129, 0.35)";
-
-                card.innerHTML = `
-                    <div class="card-top-badge" style="background: #059669;">🛡️ VỪA SỨC DỰ PHÒNG</div>
-                    <div class="card-title-row">
-                        <div class="rank-number" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">#${idx + 1}</div>
-                        <div class="sch-title">${item.title}</div>
-                    </div>
-                    <div class="card-meta-tags">
-                        <span class="meta-tag tag-country">📍 ${item.country || "Quốc tế"}</span>
-                        <span class="meta-tag" style="background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.3);">✓ ĐIỀU KIỆN SÀN ≤ HỒ SƠ BẠN (Đạt 100%)</span>
-                        <span class="meta-tag tag-vector">⚡ Khớp Chuyên Môn: ${item.sim_pct}%</span>
-                    </div>
-                    <div class="sch-benefits">
-                        <strong>Quyền lợi:</strong> ${item.funding}
-                    </div>
-                    <div class="card-footer">
-                        <span class="criteria-text">Yêu cầu học bổng: <strong>GPA ≥ ${item.min_gpa} | IELTS ≥ ${item.min_ielts}</strong> (Hồ sơ bạn: GPA ${userGpa} | IELTS ${userIelts})</span>
-                        ${item.link && item.link !== '#' ? `<a href="${item.link}" target="_blank" class="btn-detail" style="border-color: #059669; color: #34d399;">Ứng tuyển ngay ↗</a>` : ''}
-                    </div>
-                `;
+                const card = createScholarshipCard(item, idx, "safety", userGpa, userIelts);
                 safetyList.appendChild(card);
             });
         } else {
@@ -340,3 +272,129 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 });
+
+// ==========================================
+// MODAL & CARD CREATION LOGIC
+// ==========================================
+window.currentScholarshipsMap = {};
+
+function createScholarshipCard(item, idx, type, userGpa, userIelts) {
+    window.currentScholarshipsMap[item.id] = item;
+    const card = document.createElement("div");
+
+    let badgeHtml = "";
+    let rankColorStyle = "";
+    let benefitsHtml = "";
+
+    if (type === "matched") {
+        const isTop1 = idx === 0;
+        card.className = `scholarship-card ${isTop1 ? "card-top-1" : ""}`;
+        badgeHtml = isTop1 ? '<div class="card-top-badge">👑 ƯU TIÊN TOP 1</div>' : '<div class="card-top-badge" style="background: #10b981;">✓ ĐẠT CHUẨN</div>';
+        benefitsHtml = `<strong>Quyền lợi:</strong> ${item.funding || "Toàn phần / Trợ cấp"}`;
+    } else if (type === "ineligible") {
+        card.className = "scholarship-card";
+        card.style.borderColor = "rgba(239, 68, 68, 0.4)";
+        card.style.background = "linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(15, 23, 42, 0.7))";
+        badgeHtml = '<div class="card-top-badge" style="background: #ef4444; box-shadow: 0 0 12px var(--rose-glow);">❌ BỊ LOẠI VÒNG HỒ SƠ</div>';
+        rankColorStyle = 'style="color: #f87171; background: rgba(239, 68, 68, 0.15);"';
+        const gapTexts = item.gaps ? item.gaps.map(g => `<span style="color: #fca5a5; font-weight: 600;">! ${g.text}</span>`).join(" &nbsp;|&nbsp; ") : "";
+        benefitsHtml = `<div style="background: rgba(239, 68, 68, 0.1); padding: 8px 12px; border-radius: 6px; border-left: 3px solid var(--rose);"><strong>Lý do bị loại:</strong> ${gapTexts}</div>`;
+    } else if (type === "safety") {
+        card.className = "scholarship-card";
+        card.style.borderColor = "rgba(16, 185, 129, 0.35)";
+        badgeHtml = '<div class="card-top-badge" style="background: #059669;">🛡️ VỪA SỨC DỰ PHÒNG</div>';
+        rankColorStyle = 'style="background: rgba(16, 185, 129, 0.2); color: #34d399;"';
+        benefitsHtml = `<strong>Quyền lợi:</strong> ${item.funding}`;
+    }
+
+    const sourceTag = item.source_name ? `<span class="meta-tag tag-source">🌐 ${item.source_name}</span>` : "";
+    const deadlineTag = item.deadline ? `<span class="meta-tag tag-deadline">⏰ Hạn: ${item.deadline}</span>` : "";
+
+    card.innerHTML = `
+        ${badgeHtml}
+        <div class="card-title-row">
+            <div class="rank-number" ${rankColorStyle}>#${idx + 1}</div>
+            <div class="sch-title">${item.title}</div>
+        </div>
+        <div class="card-meta-tags">
+            <span class="meta-tag tag-country">📍 ${item.country || "Quốc tế"}</span>
+            <span class="meta-tag tag-degree">🎓 ${item.degree || "Thạc sĩ"}</span>
+            ${sourceTag}
+            ${deadlineTag}
+            <span class="meta-tag tag-vector">⚡ Khớp: ${item.sim_pct}%</span>
+        </div>
+        <div class="sch-benefits">
+            ${benefitsHtml}
+        </div>
+        <div class="card-footer">
+            <span class="criteria-text">Yêu cầu sàn: <strong>GPA ≥ ${item.min_gpa} | IELTS ≥ ${item.min_ielts}</strong></span>
+            <div class="card-actions-row">
+                <button type="button" class="btn-open-modal" onclick="openScholarshipModal('${item.id}')">
+                    🔍 Xem Chi Tiết
+                </button>
+            </div>
+        </div>
+    `;
+    return card;
+}
+
+window.openScholarshipModal = function(id) {
+    const item = window.currentScholarshipsMap[id];
+    if (!item) return;
+
+    document.getElementById("modal-source").textContent = `🌐 Nguồn cào: ${item.source_name || "Chính thức"}`;
+    document.getElementById("modal-title").textContent = item.title;
+    document.getElementById("modal-country").textContent = item.country || "Quốc tế";
+    document.getElementById("modal-degree").textContent = item.degree || "Thạc sĩ / Cử nhân";
+    document.getElementById("modal-deadline").textContent = item.deadline || "Theo thông báo tuyển sinh";
+    document.getElementById("modal-major").textContent = item.major || "Mọi ngành";
+    document.getElementById("modal-funding").textContent = item.funding || "Toàn phần / Trợ cấp";
+    document.getElementById("modal-checklist").textContent = item.checklist || "Bảng điểm, CV tiếng Anh, Thư giới thiệu (LOR), SOP";
+    document.getElementById("modal-commitment").textContent = item.commitment || "Theo quy chế học bổng quốc tế";
+
+    const criteriaBox = document.getElementById("modal-criteria");
+    criteriaBox.innerHTML = `
+        <span class="modal-pill">Điểm GPA tối thiểu: ≥ ${item.min_gpa} / 4.0</span>
+        <span class="modal-pill">Ngoại ngữ: IELTS ≥ ${item.min_ielts}</span>
+        <span class="modal-pill">Kinh nghiệm: ≥ ${item.min_work_exp} năm</span>
+    `;
+
+    const visitBtn = document.getElementById("modal-source-link");
+    if (item.link && item.link !== "#") {
+        visitBtn.href = item.link;
+        visitBtn.style.display = "inline-flex";
+        visitBtn.textContent = `🚀 Mở bài viết gốc trên ${item.source_name || "Trang Nguồn"} ↗`;
+    } else {
+        visitBtn.style.display = "none";
+    }
+
+    const modal = document.getElementById("scholarship-modal");
+    if (modal) modal.style.display = "flex";
+};
+
+window.closeScholarshipModal = function() {
+    const modal = document.getElementById("scholarship-modal");
+    if (modal) modal.style.display = "none";
+};
+
+// Đóng modal khi bấm nút đóng hoặc bấm ra ngoài
+document.addEventListener("DOMContentLoaded", () => {
+    const btnClose = document.getElementById("btn-close-modal");
+    if (btnClose) {
+        btnClose.addEventListener("click", window.closeScholarshipModal);
+    }
+    const modalBackdrop = document.getElementById("scholarship-modal");
+    if (modalBackdrop) {
+        modalBackdrop.addEventListener("click", (e) => {
+            if (e.target === modalBackdrop) {
+                window.closeScholarshipModal();
+            }
+        });
+    }
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            window.closeScholarshipModal();
+        }
+    });
+});
+

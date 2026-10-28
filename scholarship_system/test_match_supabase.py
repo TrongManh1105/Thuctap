@@ -49,12 +49,14 @@ def query_recommendations_for_candidate(candidate: dict, top_k: int = 5):
     SELECT 
         id,
         title,
+        source_name,
         host_country,
         degree_level,
         min_gpa,
         min_ielts,
         min_work_exp_years,
         funding_details,
+        deadline,
         link,
         ROUND(((1.0 - (embedding <=> %s::vector)) * 100.0)::numeric, 2) AS sim_pct
     FROM scholarships
@@ -65,15 +67,13 @@ def query_recommendations_for_candidate(candidate: dict, top_k: int = 5):
     cur.execute(sql_query, [vec_json, vec_json])
     rows = cur.fetchall()
 
-
-
-    print("\n" + "=" * 115)
-    print(f"{'TOP':<4} | {'TÊN HỌC BỔNG':<40} | {'QUỐC GIA':<12} | {'YÊU CẦU GPA/IELTS':<18} | {'VECTOR MATCH':<12} | {'TỔNG ĐIỂM':<10} | {'TRẠNG THÁI'}")
-    print("=" * 115)
+    print("\n" + "=" * 125)
+    print(f"{'TOP':<4} | {'TÊN HỌC BỔNG':<38} | {'NGUỒN':<15} | {'HẠN NỘP':<14} | {'YÊU CẦU':<14} | {'ĐIỂM':<8} | {'TRẠNG THÁI'}")
+    print("=" * 125)
 
     ranked_results = []
     for r in rows:
-        sch_id, title, country, degree, min_gpa, min_ielts, min_exp, funding, link, sim_pct = r
+        sch_id, title, source_name, country, degree, min_gpa, min_ielts, min_exp, funding, deadline, link, sim_pct = r
         min_gpa = float(min_gpa or 3.0)
         min_ielts = float(min_ielts or 6.0)
         min_exp = float(min_exp or 0.0)
@@ -101,8 +101,10 @@ def query_recommendations_for_candidate(candidate: dict, top_k: int = 5):
         final_score = round(max(0.40 * float(sim_pct) + 0.60 * profile_strength - penalty, 0.0), 2)
 
         ranked_results.append({
-            "title": title[:38] + "..." if len(title) > 38 else title,
-            "country": country[:10],
+            "title": title[:35] + "..." if len(title) > 35 else title,
+            "source": (source_name or "Chính thức")[:14],
+            "deadline": str(deadline or "Chưa rõ")[:13],
+            "country": country[:10] if country else "Quốc tế",
             "req": f">={min_gpa} / >={min_ielts}",
             "sim_pct": f"{sim_pct}%",
             "final_score": final_score,
@@ -116,9 +118,9 @@ def query_recommendations_for_candidate(candidate: dict, top_k: int = 5):
 
     for idx, item in enumerate(ranked_results[:top_k], 1):
         status = "ĐẠT CHUẨN" if item["is_eligible"] else f"CHƯA ĐẠT ({', '.join(item['gaps'])})"
-        print(f"{idx:<4} | {item['title']:<40} | {item['country']:<12} | {item['req']:<18} | {item['sim_pct']:<12} | {item['final_score']:<10} | {status}")
+        print(f"{idx:<4} | {item['title']:<38} | {item['source']:<15} | {item['deadline']:<14} | {item['req']:<14} | {item['final_score']:<8} | {status}")
 
-    print("=" * 115)
+    print("=" * 125)
     cur.close()
     conn.close()
 

@@ -13,13 +13,45 @@ if sys.platform == "win32":
 
 import os
 import json
+import re
 import psycopg2
 from flask import Flask, render_template, request, jsonify
 from supabase_importer import generate_mock_vector_1536
 
 app = Flask(__name__)
 
-SUPABASE_URL = "postgresql://postgres.wzsztxegmqeuwgozlggt:Trongmanh1102205@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
+SUPABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_URL", "postgresql://postgres.wzsztxegmqeuwgozlggt:Trongmanh1102205@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres")
+
+def format_deadline(dl_str):
+    if not dl_str:
+        return "Theo thông báo tuyển sinh chính thức"
+    dl_str = str(dl_str).strip()
+    
+    # ISO date format: 2026-11-30T16:59:59.999Z or 2026-12-31
+    m_iso = re.search(r"^(\d{4})-(\d{1,2})-(\d{1,2})", dl_str)
+    if m_iso:
+        return f"{m_iso.group(3).zfill(2)}/{m_iso.group(2).zfill(2)}/{m_iso.group(1)}"
+        
+    # Standard JS Date string: Fri Oct 30 2026
+    month_map = {"Jan":"01","Feb":"02","Mar":"03","Apr":"04","May":"05","Jun":"06","Jul":"07","Aug":"08","Sep":"09","Oct":"10","Nov":"11","Dec":"12"}
+    m_js = re.search(r"([A-Za-z]{3})\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})", dl_str)
+    if m_js:
+        day = m_js.group(3).zfill(2)
+        month = month_map.get(m_js.group(2), "01")
+        year = m_js.group(4)
+        return f"{day}/{month}/{year}"
+        
+    # English date format: 1 Apr 2016 (annual)
+    m_eng = re.search(r"(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})", dl_str)
+    if m_eng:
+        day = m_eng.group(1).zfill(2)
+        mon_key = m_eng.group(2)[:3].capitalize()
+        month = month_map.get(mon_key, "01")
+        year = m_eng.group(3)
+        extra = " (Hằng năm)" if "annual" in dl_str.lower() else ""
+        return f"{day}/{month}/{year}{extra}"
+        
+    return dl_str
 
 def get_db_connection():
     try:
@@ -99,8 +131,9 @@ def match_scholarships():
         # 4. TRUY VẤN SO KHỚP VECTOR VÀ XẾP HẠNG HỌC BỔNG
         query_sql = """
         SELECT 
-            id, title, host_country, degree_level, min_gpa, min_ielts, min_work_exp_years,
-            funding_details, link,
+            id, title, source_name, host_country, degree_level, major_applied,
+            funding_type, funding_details, min_gpa, min_ielts, min_work_exp_years,
+            checklist, commitment, deadline, link,
             ROUND(((1.0 - (embedding <=> %s::vector)) * 100.0)::numeric, 2) AS sim_pct
         FROM scholarships
         ORDER BY embedding <=> %s::vector ASC
@@ -113,7 +146,10 @@ def match_scholarships():
         ineligible_list = []
 
         for r in rows:
-            sch_id, title, country, degree, min_gpa, min_ielts, min_exp, funding, link, sim_pct = r
+            (sch_id, title, source_name, country, degree, major,
+             funding_type, funding, min_gpa, min_ielts, min_exp,
+             checklist, commitment, deadline, link, sim_pct) = r
+
             min_gpa = float(min_gpa or 3.0)
             min_ielts = float(min_ielts or 6.0)
             min_exp = float(min_exp or 0.0)
@@ -155,12 +191,18 @@ def match_scholarships():
             item = {
                 "id": str(sch_id),
                 "title": title,
-                "country": country,
-                "degree": degree,
+                "source_name": source_name or "Chính thức",
+                "country": country or "Quốc tế",
+                "degree": degree or "Đa bậc học",
+                "major": major or "Mọi ngành",
+                "funding_type": funding_type or "Toàn phần",
+                "funding": funding or "Toàn phần / Trợ cấp",
                 "min_gpa": min_gpa,
                 "min_ielts": min_ielts,
                 "min_work_exp": min_exp,
-                "funding": funding or "Toàn phần / Trợ cấp",
+                "checklist": checklist or "Bảng điểm, CV, Thư giới thiệu (LOR), SOP",
+                "commitment": commitment or "Theo quy định của chương trình học bổng",
+                "deadline": format_deadline(deadline),
                 "link": link or "#",
                 "sim_pct": sim_val,
                 "final_score": final_score,
@@ -236,8 +278,9 @@ def match_scholarships():
         # 3. Ưu tiên theo độ tương đồng chuyên môn (Vector Embeddings).
         sql_safety = """
         SELECT 
-            id, title, host_country, degree_level, min_gpa, min_ielts, min_work_exp_years,
-            funding_details, link,
+            id, title, source_name, host_country, degree_level, major_applied,
+            funding_type, funding_details, min_gpa, min_ielts, min_work_exp_years,
+            checklist, commitment, deadline, link,
             ROUND(((1.0 - (embedding <=> %s::vector)) * 100.0)::numeric, 2) AS sim_pct
         FROM scholarships
         WHERE is_active = TRUE
@@ -253,20 +296,26 @@ def match_scholarships():
 
         safety_alternatives = []
         for r in safety_rows:
-            sch_min_gpa = float(r[4] or 0.0)
-            sch_min_ielts = float(r[5] or 0.0)
-            sch_min_exp = float(r[6] or 0.0)
+            (sch_id, title, source_name, country, degree, major,
+             funding_type, funding, sch_min_gpa, sch_min_ielts, sch_min_exp,
+             checklist, commitment, deadline, link, sim_pct) = r
             safety_alternatives.append({
-                "id": str(r[0]),
-                "title": r[1],
-                "country": r[2],
-                "degree": r[3],
-                "min_gpa": sch_min_gpa,
-                "min_ielts": sch_min_ielts,
-                "min_work_exp": sch_min_exp,
-                "funding": r[7] or "Toàn phần / Trợ cấp",
-                "link": r[8] or "#",
-                "sim_pct": float(r[9] or 0.0),
+                "id": str(sch_id),
+                "title": title,
+                "source_name": source_name or "Chính thức",
+                "country": country or "Quốc tế",
+                "degree": degree or "Đa bậc học",
+                "major": major or "Mọi ngành",
+                "funding_type": funding_type or "Toàn phần",
+                "funding": funding or "Toàn phần / Trợ cấp",
+                "min_gpa": float(sch_min_gpa or 0.0),
+                "min_ielts": float(sch_min_ielts or 0.0),
+                "min_work_exp": float(sch_min_exp or 0.0),
+                "checklist": checklist or "Bảng điểm, CV, Thư giới thiệu (LOR), SOP",
+                "commitment": commitment or "Theo quy định học bổng",
+                "deadline": format_deadline(deadline),
+                "link": link or "#",
+                "sim_pct": float(sim_pct or 0.0),
                 "is_satisfied": True
             })
 
