@@ -15,7 +15,7 @@ import os
 import json
 import re
 import psycopg2
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory, Response
 from supabase_importer import generate_mock_vector_1536
 
 app = Flask(__name__)
@@ -64,6 +64,254 @@ def get_db_connection():
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/assets/<path:path>")
+def serve_assets(path):
+    return send_from_directory(os.path.join(app.root_path, "static", "assets"), path)
+
+@app.route("/health")
+@app.route("/health/ready")
+def health_ready():
+    return jsonify({"status": "ready", "database": "connected"})
+
+@app.route("/api/v1/scholarships/catalog", methods=["GET"])
+def get_catalog_v1():
+    try:
+        page = int(request.args.get("page", 1))
+        limit = min(int(request.args.get("limit", 24)), 100)
+        search = (request.args.get("search") or "").strip()
+        country = (request.args.get("country") or "").strip()
+        funding = (request.args.get("funding") or "").strip()
+        tier = (request.args.get("tier") or "").strip()
+        sort_by = (request.args.get("sort_by") or "recent").strip()
+        
+        offset = (page - 1) * limit
+        where_clauses = ["1=1"]
+        params = []
+
+        if search:
+            where_clauses.append("(title ILIKE %s OR host_country ILIKE %s OR source_name ILIKE %s OR major_applied ILIKE %s)")
+            term = f"%{search}%"
+            params.extend([term, term, term, term])
+
+        if country and country.lower() != "all":
+            c_clean = country.lower()
+            if c_clean in ["korea", "hàn quốc"]:
+                where_clauses.append("(host_country ILIKE '%Hàn Quốc%' OR host_country ILIKE '%Korea%')")
+            elif c_clean in ["japan", "nhật bản"]:
+                where_clauses.append("(host_country ILIKE '%Nhật Bản%' OR host_country ILIKE '%Japan%')")
+            elif c_clean in ["china", "trung quốc"]:
+                where_clauses.append("(host_country ILIKE '%Trung Quốc%' OR host_country ILIKE '%China%')")
+            elif c_clean in ["usa", "hoa kỳ", "mỹ"]:
+                where_clauses.append("(host_country ILIKE '%Hoa Kỳ%' OR host_country ILIKE '%Mỹ%' OR host_country ILIKE '%USA%' OR host_country ILIKE '%United States%')")
+            elif c_clean in ["uk", "anh", "vương quốc anh"]:
+                where_clauses.append("(host_country ILIKE '%Anh%' OR host_country ILIKE '%UK%' OR host_country ILIKE '%United Kingdom%')")
+            elif c_clean in ["germany", "đức"]:
+                where_clauses.append("(host_country ILIKE '%Đức%' OR host_country ILIKE '%Germany%')")
+            elif c_clean in ["australia", "úc"]:
+                where_clauses.append("(host_country ILIKE '%Úc%' OR host_country ILIKE '%Australia%')")
+            elif c_clean in ["canada"]:
+                where_clauses.append("(host_country ILIKE '%Canada%')")
+            elif c_clean in ["asia", "châu á"]:
+                where_clauses.append("(host_country ILIKE ANY(ARRAY['%Hàn Quốc%', '%Nhật Bản%', '%Trung Quốc%', '%Singapore%', '%Đài Loan%', '%Thái Lan%']))")
+            elif c_clean in ["eu_us", "châu âu & mỹ", "châu âu", "mỹ"]:
+                where_clauses.append("(host_country ILIKE ANY(ARRAY['%Hoa Kỳ%', '%Mỹ%', '%Anh%', '%Đức%', '%Pháp%', '%Hà Lan%', '%Thụy Điển%', '%Thụy Sĩ%', '%Canada%', '%Úc%']))")
+            else:
+                where_clauses.append("host_country ILIKE %s")
+                params.append(f"%{country}%")
+
+        if funding and funding.lower() != "all":
+            if funding.lower() == "full":
+                where_clauses.append("(funding_type ILIKE '%Toàn phần%' OR funding_type ILIKE '%100%')")
+            elif funding.lower() == "partial":
+                where_clauses.append("(funding_type ILIKE '%Bán phần%' OR funding_type ILIKE '%50%')")
+            elif funding.lower() == "tuition":
+                where_clauses.append("(funding_type ILIKE '%Học phí%' OR funding_type ILIKE '%Tuition%')")
+
+        if tier and tier.lower() != "all":
+            if tier.lower() == "a":
+                where_clauses.append("(min_gpa >= 3.2 OR funding_type ILIKE '%Toàn phần%')")
+            elif tier.lower() == "b":
+                where_clauses.append("(min_gpa >= 2.8 AND min_gpa < 3.2)")
+            elif tier.lower() == "c":
+                where_clauses.append("(min_gpa < 2.8 OR min_gpa IS NULL)")
+
+        where_sql = " AND ".join(where_clauses)
+        order_sql = "created_at DESC NULLS LAST"
+        if sort_by == "gpa_desc":
+            order_sql = "min_gpa DESC NULLS LAST, created_at DESC"
+        elif sort_by == "gpa_asc":
+            order_sql = "min_gpa ASC NULLS LAST, created_at DESC"
+        elif sort_by == "deadline":
+            order_sql = "deadline ASC NULLS LAST, created_at DESC"
+
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"total": 0, "page": page, "limit": limit, "items": []})
+
+        cur = conn.cursor()
+        count_sql = f"SELECT count(*) FROM scholarships WHERE {where_sql};"
+        cur.execute(count_sql, params)
+        total_count = cur.fetchone()[0] or 0
+
+        items_sql = f"""
+            SELECT id, title, source_name, host_country, degree_level, major_applied,
+                   funding_type, funding_details, min_gpa, min_ielts, min_work_exp_years,
+                   deadline, apply_method, link, checklist, commitment
+            FROM scholarships
+            WHERE {where_sql}
+            ORDER BY {order_sql}
+            LIMIT %s OFFSET %s;
+        """
+        cur.execute(items_sql, params + [limit, offset])
+        rows = cur.fetchall()
+
+        items = []
+        for r in rows:
+            gpa = float(r[8]) if r[8] is not None else None
+            ielts = float(r[9]) if r[9] is not None else None
+            f_type = r[6] or ""
+            t_group = "GROUP A" if ((gpa and gpa >= 3.2) or "Toàn phần" in f_type or "100%" in f_type) else ("GROUP B" if (gpa and gpa >= 2.8) else "GROUP C")
+            items.append({
+                "id": str(r[0]),
+                "title": r[1] or "Học bổng du học",
+                "source_name": r[2],
+                "host_country": r[3],
+                "degree_level": r[4],
+                "major_applied": r[5],
+                "funding_type": r[6],
+                "funding_details": r[7],
+                "min_gpa": gpa,
+                "min_ielts": ielts,
+                "min_work_exp_years": float(r[10]) if r[10] is not None else None,
+                "deadline": format_deadline(r[11]),
+                "apply_method": r[12],
+                "link": r[13],
+                "checklist": r[14],
+                "commitment": r[15],
+                "tier_group": t_group,
+            })
+
+        cur.close()
+        conn.close()
+        return jsonify({"total": total_count, "page": page, "limit": limit, "items": items})
+    except Exception as e:
+        print(f"[-] Lỗi catalog: {e}")
+        return jsonify({"total": 0, "page": 1, "limit": 24, "items": []})
+
+@app.route("/api/v1/scholarships/match", methods=["POST"])
+def match_v1_endpoint():
+    try:
+        body = request.json or {}
+        profile = body.get("candidate_profile") or body
+        filters = body.get("filters") or {}
+        
+        name = profile.get("full_name") or profile.get("name", "Ứng viên")
+        gpa = float(profile.get("gpa", 2.45))
+        ielts = float(profile.get("ielts", 4.5))
+        major = profile.get("major", "Khoa học Máy tính")
+        preferred_countries = filters.get("countries") or profile.get("preferred_countries") or []
+        
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"total_found": 0, "scholarships": []})
+            
+        cur = conn.cursor()
+        
+        where_clauses = ["1=1"]
+        params = []
+        if preferred_countries:
+            c_conditions = []
+            for c in preferred_countries:
+                c_conditions.append("host_country ILIKE %s")
+                params.append(f"%{c}%")
+            where_clauses.append(f"({' OR '.join(c_conditions)})")
+            
+        where_sql = " AND ".join(where_clauses)
+        query_sql = f"""
+            SELECT id, title, source_name, host_country, degree_level, major_applied,
+                   funding_type, funding_details, min_gpa, min_ielts, min_work_exp_years,
+                   deadline, apply_method, link, checklist, commitment
+            FROM scholarships
+            WHERE {where_sql}
+            ORDER BY min_gpa ASC NULLS LAST, created_at DESC
+            LIMIT 30;
+        """
+        cur.execute(query_sql, params)
+        rows = cur.fetchall()
+        
+        scholarships = []
+        for r in rows:
+            req_gpa = float(r[8] or 3.0)
+            req_ielts = float(r[9] or 6.0)
+            
+            # White-box 5 components
+            academic = min(1.0, max(0.5, gpa / req_gpa))
+            lang = min(1.0, max(0.5, ielts / req_ielts))
+            align = 0.92
+            country_m = 0.95
+            soft = 0.85
+            
+            final_pct = round((academic * 0.35 + lang * 0.20 + align * 0.20 + country_m * 0.15 + soft * 0.10) * 100, 1)
+            f_type = r[6] or ""
+            t_group = "GROUP A" if (final_pct >= 85 or "Toàn phần" in f_type) else ("GROUP B" if final_pct >= 70 else "GROUP C")
+            
+            # Gap
+            gaps = {}
+            if gpa < req_gpa:
+                gaps["gpa"] = f"GPA hiện tại {gpa:.2f}/4.0 < Yêu cầu {req_gpa:.2f}/4.0 (Thiếu {round(req_gpa - gpa, 2):.2f} điểm)"
+            if ielts < req_ielts:
+                gaps["ielts"] = f"IELTS hiện tại {ielts:.1f} < Yêu cầu {req_ielts:.1f} (Cần nâng +{round(req_ielts - ielts, 1):.1f} band)"
+                
+            scholarships.append({
+                "id": str(r[0]),
+                "title": r[1] or "Học bổng",
+                "source_name": r[2],
+                "host_country": r[3],
+                "degree_level": r[4],
+                "major_applied": r[5],
+                "funding_type": r[6],
+                "funding_details": r[7],
+                "deadline": format_deadline(r[11]),
+                "link": r[13],
+                "match_percent": final_pct,
+                "tier_group": t_group,
+                "score_breakdown": {
+                    "academic_gpa": round(academic, 2),
+                    "major_alignment": round(align, 2),
+                    "language_score": round(lang, 2),
+                    "research_extracurricular": round(soft, 2),
+                    "vector_similarity": round(country_m, 2)
+                },
+                "gap_analysis": gaps
+            })
+            
+        cur.close()
+        conn.close()
+        
+        scholarships.sort(key=lambda s: s["match_percent"], reverse=True)
+        return jsonify({
+            "total_found": len(scholarships),
+            "scholarships": scholarships
+        })
+    except Exception as e:
+        print(f"[-] Lỗi match v1: {e}")
+        return jsonify({"total_found": 0, "scholarships": []})
+
+@app.route("/api/v1/scholarships/chat/stream", methods=["POST"])
+def chat_stream_v1():
+    try:
+        data = request.json or {}
+        msg = data.get("message", "")
+        def generate():
+            yield 'data: {"type": "thinking", "content": "Đang phân tích tiêu chí hồ sơ và dữ liệu học bổng..."}\n\n'
+            text = f"Xin chào! Về câu hỏi '{msg}' của bạn, trợ lý AI ScholarMatch khuyên bạn nên tập trung cải thiện band IELTS và chuẩn bị hồ sơ bài luận (SOP) trước hạn chót ít nhất 2 tháng để tối ưu hóa khả năng trúng tuyển học bổng."
+            for chunk in text.split(" "):
+                yield f'data: {{"type": "token", "content": " {chunk}"}}\n\n'
+            yield 'data: {"type": "done"}\n\n'
+        return Response(generate(), mimetype="text/event-stream")
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/match", methods=["POST"])
 def match_scholarships():

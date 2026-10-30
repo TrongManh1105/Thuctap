@@ -26,4 +26,9 @@ Thumbs.db
 # Scratch & Temporary
 scholarship_system/data/*.csv.bak
 *.exe
+*.log
+node_modules/
+dist/
+.DS_Store
+
 

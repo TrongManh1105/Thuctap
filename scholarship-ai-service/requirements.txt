@@ -1,0 +1,24 @@
+# Web API
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.1
+pydantic>=2.7.0
+pydantic-settings>=2.3.4
+sse-starlette>=2.1.0
+httpx>=0.27.0
+python-dotenv>=1.0.1
+python-multipart>=0.0.9
+
+# Database & pgvector
+sqlalchemy[asyncio]>=2.0.30
+asyncpg>=0.30.0
+pgvector>=0.3.1
+
+# AI & LLM Frameworks
+langchain-core>=0.2.0
+langchain-openai>=0.1.0
+langchain-google-genai>=2.0
+langgraph>=0.1.0
+
+# Document Parsing & Helpers
+pdfplumber>=0.11.0
+numpy>=1.26.0

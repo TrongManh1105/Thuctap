@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark light" />
+  <title>ScholarMatch AI — Hệ Thống Đối Khớp & Săn Học Bổng Toàn Cầu</title>
+  <meta name="description" content="Nền tảng trí tuệ nhân tạo đối khớp 7,949+ học bổng du học toàn cầu, phân tích khoảng cách tiêu chuẩn (Gap Analysis) và trợ lý ảo tư vấn 24/7." />
+  
+  <!-- Open Graph / SEO for Public Sharing -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ScholarMatch AI — Nền Tảng Đối Khớp Học Bổng Du Học Toàn Cầu" />
+  <meta property="og:description" content="Tìm kiếm thông minh 7,949+ học bổng du học toàn cầu với AI Reranker 5 chiều và lộ trình nâng cấp hồ sơ chuẩn xác." />
+  
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366F1'><path d='M22 10v6M2 10l10-5 10 5-10 5z'/><path d='M6 12v5c3 3 9 3 12 0v-5'/></svg>" />
+
+  <!-- Google Fonts: Be Vietnam Pro (Native Vietnamese Perfection) & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- Ambient background glow effects -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-logo" id="brand-logo" role="button" tabindex="0" title="ScholarMatch AI Homepage">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">ScholarMatch <span class="badge-ai">AI</span></span>
+          <span class="brand-subtitle">Study Abroad Intelligence Platform</span>
+        </div>
+      </div>
+
+      <nav class="nav-links" aria-label="Main Navigation">
+        <button class="nav-tab active" id="tab-nav-catalog" data-target="section-catalog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
+          Kho Học Bổng Toàn Cầu
+        </button>
+        <button class="nav-tab" id="tab-nav-profile" data-target="section-profile">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Hồ Sơ & Gợi Ý Cá Nhân
+        </button>
+        <button class="nav-tab" id="tab-nav-chat" data-target="section-chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Trợ Lý AI Du Học
+        </button>
+      </nav>
+
+      <div class="header-actions">
+        <div class="status-indicator" id="backend-status-pill" title="Trạng thái kết nối Supabase Backend">
+          <span class="status-dot"></span>
+          <span class="status-text" id="backend-status-text">Đang kiểm tra kết nối...</span>
+        </div>
+        <button class="btn-icon theme-toggle" id="btn-theme-toggle" title="Đổi giao diện Sáng / Tối" aria-label="Chuyển đổi chủ đề">
+          <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="main-container">
+    <!-- Hero Banner -->
+    <section class="hero-banner">
+      <div class="hero-tag">
+        <span class="hero-tag-pulse"></span>
+        Hệ Thống Độc Lập Kế Thừa & Nâng Cấp Từ Student360
+      </div>
+      <h1 class="hero-title">Khám Phá Học Bổng Du Học Đỉnh Cao Bằng <span class="text-gradient">Trí Tuệ Nhân Tạo</span></h1>
+      <p class="hero-desc">
+        Kho dữ liệu <strong>7,944+ học bổng toàn cầu</strong> kết hợp <strong>White-box 5-Factor Reranker</strong> và <strong>pgvector 1536 chiều</strong>. Tra cứu toàn diện kho học bổng thế giới và đối khớp cá nhân hóa đưa ra lộ trình bổ sung tiêu chí chuẩn xác.
+      </p>
+
+      <div class="hero-metrics-bar">
+        <div class="metric-card">
+          <span class="metric-val" id="metric-total-scholarships">7,944+</span>
+          <span class="metric-lbl">Học bổng Supabase</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-card">
+          <span class="metric-val">1536 Chiều</span>
+          <span class="metric-lbl">Vector Cosine</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-card">
+          <span class="metric-val">5 Chiều</span>
+          <span class="metric-lbl">White-box Reranker</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-card">
+          <span class="metric-val">Gap Analysis</span>
+          <span class="metric-lbl">Lộ Trình Nâng Chuẩn</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-card">
+          <span class="metric-val">0%</span>
+          <span class="metric-lbl">Ảo Tưởng Dữ Liệu</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         TAB 1: KHO HỌC BỔNG TOÀN CẦU (GLOBAL SCHOLARSHIP CATALOG)
+         Duyệt toàn bộ kho học bổng, chọn quốc gia, tài trợ tự do không bị giới hạn
+         ========================================================================= -->
+    <section class="content-section active" id="section-catalog">
+      <div class="feed-header-wrap">
+        <div>
+          <h2 class="section-title">Kho Học Bổng Du Học Toàn Cầu</h2>
+          <p class="section-subtitle">Tra cứu tự do toàn bộ 7,944+ học bổng trên thế giới theo quốc gia, mức tài trợ và phân tầng</p>
+        </div>
+
+        <div class="feed-stats-badge" id="catalog-results-count">
+          Hiển thị <strong>0</strong> học bổng toàn cầu
+        </div>
+      </div>
+
+      <!-- Filters & Search Toolbar -->
+      <div class="filter-toolbar card">
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="catalog-search-input" placeholder="Tìm kiếm theo tên học bổng, trường, ngành, quốc gia, quyền lợi..." />
+          <button type="button" class="search-clear-btn" id="catalog-btn-clear-search" style="display:none;" title="Xóa tìm kiếm">&times;</button>
+        </div>
+
+        <div class="filter-dropdowns">
+          <select id="catalog-filter-country" class="form-select select-sm" aria-label="Lọc theo quốc gia">
+            <option value="">Tất cả quốc gia</option>
+            <option value="Hàn Quốc">🇰🇷 Hàn Quốc</option>
+            <option value="Nhật Bản">🇯🇵 Nhật Bản</option>
+            <option value="Trung Quốc">🇨🇳 Trung Quốc</option>
+            <option value="Hoa Kỳ">🇺🇸 Hoa Kỳ / Mỹ</option>
+            <option value="Vương quốc Anh">🇬🇧 Vương quốc Anh</option>
+            <option value="Đức">🇩🇪 Đức</option>
+            <option value="Úc">🇦🇺 Úc</option>
+            <option value="Canada">🇨🇦 Canada</option>
+            <option value="Pháp">🇫🇷 Pháp</option>
+            <option value="Hà Lan">🇳🇱 Hà Lan</option>
+            <option value="Singapore">🇸🇬 Singapore</option>
+            <option value="Thụy Điển">🇸🇪 Thụy Điển</option>
+            <option value="Thụy Sĩ">🇨🇭 Thụy Sĩ</option>
+            <option value="Đài Loan">🇹🇼 Đài Loan</option>
+          </select>
+
+          <select id="catalog-filter-funding" class="form-select select-sm" aria-label="Lọc theo mức tài trợ">
+            <option value="">Tất cả mức tài trợ</option>
+            <option value="Toàn phần">Toàn phần 100%</option>
+            <option value="Bán phần">Bán phần / Học phí</option>
+            <option value="Trợ cấp">Trợ cấp sinh hoạt phí</option>
+          </select>
+
+          <select id="catalog-filter-tier" class="form-select select-sm" aria-label="Lọc theo phân tầng Group">
+            <option value="">Tất cả phân tầng (A, B, C)</option>
+            <option value="Group A">Group A (≥ 85% - Cơ hội cao)</option>
+            <option value="Group B">Group B (70-84% - Tiềm năng)</option>
+            <option value="Group C">Group C (&lt; 70% - Thử thách)</option>
+          </select>
+
+          <select id="catalog-sort-select" class="form-select select-sm" aria-label="Sắp xếp kết quả">
+            <option value="match_desc">Độ phù hợp: Cao nhất</option>
+            <option value="deadline_asc">Hạn chót: Gần nhất</option>
+            <option value="country_asc">Quốc gia (A → Z)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick Filter Chips -->
+      <div class="quick-filter-chips">
+        <span class="chip-filter active" data-catalog-filter="all">Tất cả</span>
+        <span class="chip-filter" data-catalog-filter="full-ride">💰 Toàn phần 100%</span>
+        <span class="chip-filter" data-catalog-filter="asia">🌏 Châu Á</span>
+        <span class="chip-filter" data-catalog-filter="europe">🌍 Châu Âu & Mỹ</span>
+      </div>
+
+      <!-- Global Catalog Grid -->
+      <div class="scholarship-grid" id="catalog-results-grid"></div>
+
+      <!-- Load More / Pagination Bar for 7,940+ Catalog -->
+      <div class="catalog-pagination-bar" id="catalog-pagination-bar">
+        <button class="btn btn-secondary btn-lg" id="btn-catalog-load-more">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>
+          <span id="catalog-load-more-text">Tải thêm 24 học bổng từ kho Supabase</span>
+        </button>
+        <p class="catalog-pagination-status" id="catalog-pagination-status">
+          Đang hiển thị <span id="catalog-current-loaded">24</span> / <span id="catalog-total-available">7,949</span> học bổng toàn cầu
+        </p>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         TAB 2: HỒ SƠ NĂNG LỰC & GỢI Ý RIÊNG CHO ỨNG VIÊN
+         Nhập GPA, IELTS, Quét CV -> Bảng gợi ý riêng + Xếp hạng Top -> Thấp + Lộ trình bổ sung
+         ========================================================================= -->
+    <section class="content-section" id="section-profile">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Hồ Sơ Năng Lực & Đối Khớp Cá Nhân Hóa</h2>
+          <p class="section-subtitle">Tự động trích xuất từ CV hoặc điều chỉnh điểm số để nhận bảng đánh giá xếp hạng và lộ trình bổ sung tiêu chí riêng biệt</p>
+        </div>
+        <div class="header-tools">
+          <button class="btn btn-secondary btn-sm" id="btn-load-demo-profile" title="Nạp hồ sơ chuẩn mẫu">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Nạp Hồ Sơ Mẫu
+          </button>
+          <button class="btn btn-outline btn-sm" id="btn-clear-profile" title="Làm mới form">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            Làm Mới Form
+          </button>
+        </div>
+      </div>
+
+      <!-- Bento Form & Scanner Layout -->
+      <div class="grid-profile-layout">
+        <!-- Left Bento: AI CV Scanner -->
+        <div class="card card-cv-scanner">
+          <div class="card-header-styled">
+            <div class="badge-icon-purple">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div>
+              <h3 class="card-title">AI CV Smart Scanner</h3>
+              <p class="card-caption">Kéo thả file CV/Resume để tự động bóc tách GPA, Ngoại ngữ & Ngành</p>
+            </div>
+          </div>
+
+          <div class="upload-dropzone" id="cv-dropzone">
+            <input type="file" id="file-cv-input" accept=".pdf" style="display: none;" />
+            <div class="scan-laser" id="scan-laser-beam"></div>
+
+            <div class="dropzone-content">
+              <div class="upload-cloud-icon">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
+              </div>
+              <p class="dropzone-text">Kéo thả file <strong>PDF CV/Resume</strong> vào đây</p>
+              <p class="dropzone-sub">Hệ thống hỗ trợ file PDF học thuật tối đa 10MB</p>
+              
+              <div class="dropzone-buttons">
+                <button class="btn btn-outline btn-sm" id="btn-browse-cv" type="button">Chọn file PDF</button>
+                <button class="btn btn-secondary btn-sm" id="btn-demo-cv-scan" type="button" title="Mô phỏng quét file CV mẫu không cần chuẩn bị PDF">✨ Thử Quét CV Mẫu</button>
+              </div>
+            </div>
+
+            <!-- Scan Loading Overlay -->
+            <div class="scan-progress-overlay" id="scan-progress" style="display: none;">
+              <div class="spinner"></div>
+              <p class="scan-status-text" id="scan-status-text">Đang đọc PDF và trích xuất thông số học thuật...</p>
+              <span class="scan-status-step" id="scan-status-step">Bước 1/3: Phân tích cấu trúc trang học thuật</span>
+            </div>
+          </div>
+
+          <!-- Alert Scan Result -->
+          <div class="scan-result-badge" id="scan-result-alert" style="display: none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div class="scan-result-details">
+              <strong id="scan-result-text">Bóc tách CV thành công!</strong>
+              <span id="scan-result-meta">Đã tự động nhận diện: GPA 3.40, IELTS 6.5, AI & CS.</span>
+            </div>
+          </div>
+
+          <div class="scanner-tips-box">
+            <span class="tips-icon">💡</span>
+            <p><strong>Cơ chế tự động:</strong> Sau khi bóc tách hoặc điều chỉnh thông số, bấm nút bên dưới để nhận bảng phân tích học bổng và lộ trình bổ sung tiêu chí riêng cho bạn.</p>
+          </div>
+        </div>
+
+        <!-- Right Bento: Candidate Profile Form -->
+        <div class="card card-profile-form">
+          <form id="candidate-profile-form" class="form-grid">
+            <div class="form-group full-width">
+              <label for="input-fullname">Họ và Tên Ứng Viên</label>
+              <input type="text" id="input-fullname" class="form-input" placeholder="Ví dụ: Nguyễn Trọng Mạnh Tiến" required />
+            </div>
+
+            <div class="form-group">
+              <label for="input-target-degree">Bậc Học Mục Tiêu</label>
+              <select id="input-target-degree" class="form-select">
+                <option value="Thạc sĩ" selected>Thạc sĩ (Master's Degree)</option>
+                <option value="Cử nhân">Cử nhân (Bachelor's Degree)</option>
+                <option value="Tiến sĩ">Tiến sĩ (Ph.D)</option>
+                <option value="Nghiên cứu sinh / Sau tiến sĩ">Nghiên cứu sinh / Sau tiến sĩ (Postdoc)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="input-major">Chuyên Ngành Học Thuật</label>
+              <input type="text" id="input-major" class="form-input" placeholder="Ví dụ: Trí tuệ Nhân tạo / Khoa học Máy tính" required />
+              <div class="major-suggestions" id="major-suggestions">
+                <span class="chip-mini" data-val="Trí tuệ Nhân tạo">Trí tuệ Nhân tạo</span>
+                <span class="chip-mini" data-val="Khoa học Máy tính">Khoa học Máy tính</span>
+                <span class="chip-mini" data-val="Khoa học Dữ liệu">Khoa học Dữ liệu</span>
+                <span class="chip-mini" data-val="Kỹ thuật Y sinh">Kỹ thuật Y sinh</span>
+                <span class="chip-mini" data-val="Kinh tế & Tài chính">Kinh tế & Tài chính</span>
+              </div>
+            </div>
+
+            <!-- GPA Slider + Live Number -->
+            <div class="form-group">
+              <div class="label-with-val">
+                <label for="input-gpa">Điểm GPA Tích Lũy (Thang 4.0)</label>
+                <div class="val-display-group">
+                  <span class="val-display" id="display-gpa-val">2.45</span>
+                  <span class="val-badge" id="badge-gpa-level">Trung bình (C)</span>
+                </div>
+              </div>
+              <input type="range" id="input-gpa" class="form-range" min="2.0" max="4.0" step="0.05" value="2.45" />
+              <div class="range-ticks">
+                <span>2.0 (TB)</span>
+                <span>3.0 (Khá)</span>
+                <span>3.5 (Giỏi)</span>
+                <span>4.0 (Xuất sắc)</span>
+              </div>
+            </div>
+
+            <!-- IELTS Slider + Live Number -->
+            <div class="form-group">
+              <div class="label-with-val">
+                <label for="input-ielts">Chứng Chỉ Ngoại Ngữ IELTS</label>
+                <div class="val-display-group">
+                  <span class="val-display" id="display-ielts-val">4.5</span>
+                  <span class="val-badge" id="badge-ielts-level">B1 Cần nâng</span>
+                </div>
+              </div>
+              <input type="range" id="input-ielts" class="form-range" min="4.0" max="9.0" step="0.5" value="4.5" />
+              <div class="range-ticks">
+                <span>4.0</span>
+                <span>6.0 (B2)</span>
+                <span>7.0 (C1)</span>
+                <span>8.0+ (C2)</span>
+              </div>
+            </div>
+
+            <!-- Preferred Countries Multi Select (Expanded) -->
+            <div class="form-group full-width">
+              <div class="label-with-val">
+                <label>Quốc Gia Nguyện Vọng Của Bạn (Chọn 1 hoặc nhiều nước)</label>
+                <div class="tag-actions-group">
+                  <span class="val-display" id="selected-countries-count">Đã chọn 1 nước (Hàn Quốc)</span>
+                  <button type="button" class="btn-text-action" id="btn-select-all-countries">Chọn tất cả</button>
+                  <button type="button" class="btn-text-action" id="btn-clear-countries">Bỏ chọn</button>
+                </div>
+              </div>
+              <div class="tag-selector" id="country-tag-selector">
+                <span class="tag-pill active" data-val="Hàn Quốc">🇰🇷 Hàn Quốc</span>
+                <span class="tag-pill" data-val="Nhật Bản">🇯🇵 Nhật Bản</span>
+                <span class="tag-pill" data-val="Trung Quốc">🇨🇳 Trung Quốc</span>
+                <span class="tag-pill" data-val="Hoa Kỳ">🇺🇸 Hoa Kỳ / Mỹ</span>
+                <span class="tag-pill" data-val="Vương quốc Anh">🇬🇧 Vương quốc Anh</span>
+                <span class="tag-pill" data-val="Đức">🇩🇪 Đức</span>
+                <span class="tag-pill" data-val="Úc">🇦🇺 Úc</span>
+                <span class="tag-pill" data-val="Canada">🇨🇦 Canada</span>
+                <span class="tag-pill" data-val="Pháp">🇫🇷 Pháp</span>
+                <span class="tag-pill" data-val="Hà Lan">🇳🇱 Hà Lan</span>
+                <span class="tag-pill" data-val="Singapore">🇸🇬 Singapore</span>
+                <span class="tag-pill" data-val="Thụy Điển">🇸🇪 Thụy Điển</span>
+                <span class="tag-pill" data-val="Thụy Sĩ">🇨🇭 Thụy Sĩ</span>
+                <span class="tag-pill" data-val="Đài Loan">🇹🇼 Đài Loan</span>
+                <span class="tag-pill" data-val="Ý">🇮🇹 Ý</span>
+                <span class="tag-pill" data-val="Phần Lan">🇫🇮 Phần Lan</span>
+              </div>
+            </div>
+
+            <!-- Academic Strength Counters -->
+            <div class="form-group">
+              <label for="input-publications">Số Bài Báo Khoa Học (Nghiên Cứu)</label>
+              <div class="number-stepper">
+                <button type="button" class="stepper-btn" data-target="input-publications" data-delta="-1">−</button>
+                <input type="number" id="input-publications" class="form-input text-center" min="0" max="25" value="1" />
+                <button type="button" class="stepper-btn" data-target="input-publications" data-delta="1">+</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="input-awards">Số Giải Thưởng / NCKH / Học Bổng Đã Đạt</label>
+              <div class="number-stepper">
+                <button type="button" class="stepper-btn" data-target="input-awards" data-delta="-1">−</button>
+                <input type="number" id="input-awards" class="form-input text-center" min="0" max="25" value="2" />
+                <button type="button" class="stepper-btn" data-target="input-awards" data-delta="1">+</button>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <button type="button" class="btn btn-primary btn-lg full-width" id="btn-run-match">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Tìm Kiếm Học Bổng Du Học
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- =====================================================================
+           KHU VỰC ĐÁNH GIÁ & GỢI Ý RIÊNG BIỆT DÀNH CHO ỨNG VIÊN
+           Hiển thị bảng xếp hạng từ top cao -> thấp + Lộ trình bổ sung tiêu chí
+           ===================================================================== -->
+      <div class="profile-matched-section" id="profile-matched-section" style="margin-top: 3rem;">
+        <div class="section-divider">
+          <span class="divider-line"></span>
+          <span class="divider-badge">KẾT QUẢ ĐỐI KHỚP RIÊNG & LỘ TRÌNH HÀNH ĐỘNG</span>
+          <span class="divider-line"></span>
+        </div>
+
+        <!-- Candidate Diagnostic Card (Chẩn đoán năng lực & Cảnh báo tiêu chí) -->
+        <div class="card profile-diagnostic-card" id="profile-diagnostic-card">
+          <div class="diagnostic-top">
+            <div class="diagnostic-avatar">👤</div>
+            <div class="diagnostic-meta">
+              <h3 class="diagnostic-title" id="diag-candidate-name">Nguyễn Trọng Mạnh Tiến</h3>
+              <p class="diagnostic-sub" id="diag-candidate-stats">Mục tiêu: Thạc sĩ • GPA: 2.45/4.0 • IELTS: 4.5 • Ngành: Trí tuệ Nhân tạo / KHMT</p>
+            </div>
+            <div class="diagnostic-score-pill" id="diag-readiness-pill">
+              <span class="readiness-label">Chỉ số sẵn sàng</span>
+              <strong class="readiness-val" id="diag-readiness-val">76.4%</strong>
+            </div>
+          </div>
+
+          <div class="diagnostic-content-box">
+            <h4 class="diag-headline" id="diag-headline">Phân tích khoảng cách tiêu chuẩn (Gap Diagnostic)</h4>
+            <p class="diag-summary-text" id="diag-summary-text">
+              Hồ sơ của bạn hiện đạt GPA 2.45 và IELTS 4.5. Bạn đang quan tâm đến học bổng tại <strong>Hàn Quốc</strong>. Dưới đây là bảng xếp hạng độ tương thích từ cao xuống thấp và lộ trình các tiêu chí cần nâng cấp cụ thể để gia tăng cơ hội trúng tuyển.
+            </p>
+
+            <div class="diag-badges-grid">
+              <div class="diag-badge-item badge-strengths">
+                <span class="badge-icon">✓</span>
+                <div>
+                  <strong>Điểm mạnh đã đạt:</strong>
+                  <span id="diag-strength-text">Chuyên ngành AI phù hợp trực tiếp với các phòng Lab nghiên cứu tại Hàn Quốc.</span>
+                </div>
+              </div>
+
+              <div class="diag-badge-item badge-gaps">
+                <span class="badge-icon">⚠️</span>
+                <div>
+                  <strong>Tiêu chí còn thiếu cần bổ sung:</strong>
+                  <span id="diag-gap-text">GPA 2.45 và IELTS 4.5 hiện dưới chuẩn sàn của học bổng Chính phủ SNU/KAIST (yêu cầu GPA 3.0+, IELTS 6.0+).</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Matched Scholarships List (Ranked Top to Bottom) -->
+        <div class="feed-header-wrap" style="margin-top: 2rem;">
+          <div>
+            <h3 class="section-title" style="font-size: 1.45rem;">Bảng Xếp Hạng Học Bổng Phù Hợp Riêng (Top Cao Đến Thấp)</h3>
+            <p class="section-subtitle" id="matched-feed-subtitle">Đã lọc chính xác theo quốc gia bạn chọn kèm lộ trình bổ sung tiêu chuẩn</p>
+          </div>
+          <div class="feed-stats-badge" id="matched-results-count">
+            Hiển thị <strong>0</strong> học bổng phù hợp
+          </div>
+        </div>
+
+        <!-- Matched Scholarship Cards Grid -->
+        <div class="scholarship-grid" id="matched-scholarships-grid"></div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         TAB 3: TRỢ LÝ AI DU HỌC (LANGGRAPH CHATBOT)
+         ========================================================================= -->
+    <section class="content-section" id="section-chat">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Trợ Lý AI Tư Vấn Du Học ScholarMatch</h2>
+          <p class="section-subtitle">Trò chuyện ngữ cảnh thông minh, kết nối trực tiếp với 7,944+ học bổng Supabase theo thời gian thực (SSE)</p>
+        </div>
+        <div class="header-tools">
+          <button class="btn btn-outline btn-sm" id="btn-clear-chat" title="Xóa lịch sử trò chuyện">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Xóa Lịch Sử Chat
+          </button>
+        </div>
+      </div>
+
+      <div class="chat-container-layout card">
+        <!-- Active Profile Context Bar -->
+        <div class="chat-context-bar" id="chat-context-bar">
+          <div class="context-item">
+            <span class="context-lbl">Ứng viên:</span>
+            <strong id="chat-context-name">Nguyễn Trọng Mạnh Tiến</strong>
+          </div>
+          <div class="context-item">
+            <span class="context-lbl">Bậc học:</span>
+            <strong id="chat-context-degree">Thạc sĩ</strong>
+          </div>
+          <div class="context-item">
+            <span class="context-lbl">GPA:</span>
+            <strong id="chat-context-gpa">2.45 / 4.0</strong>
+          </div>
+          <div class="context-item">
+            <span class="context-lbl">IELTS:</span>
+            <strong id="chat-context-ielts">4.5</strong>
+          </div>
+          <div class="context-item">
+            <span class="context-lbl">Quốc gia:</span>
+            <strong id="chat-context-countries">Hàn Quốc</strong>
+          </div>
+        </div>
+
+        <!-- Quick Prompt Chips -->
+        <div class="quick-prompts-bar">
+          <span class="quick-prompt-label">Gợi ý câu hỏi:</span>
+          <button class="chip" data-query="Với GPA 2.45 và IELTS 4.5, có những học bổng nào tại Hàn Quốc tiếp nhận hồ sơ của tôi?">🇰🇷 Cơ hội du học Hàn Quốc với GPA 2.45</button>
+          <button class="chip" data-query="Lộ trình nâng điểm IELTS từ 4.5 lên 6.0 trong vòng 3-4 tháng để kịp nộp học bổng Hàn Quốc?">🎯 Lộ trình nâng IELTS 4.5 lên 6.0</button>
+          <button class="chip" data-query="Đại học Dong-A và Đại học Quốc gia Pusan có chính sách học bổng thế nào cho ứng viên điểm trung bình?">🏢 Học bổng Dong-A & PNU</button>
+          <button class="chip" data-query="Làm thế nào để viết Statement of Purpose (SOP) bù đắp cho điểm GPA chưa cao?">📝 Bí quyết viết SOP bù điểm GPA</button>
+        </div>
+
+        <!-- Chat Messages View -->
+        <div class="chat-messages-scroll" id="chat-messages-container">
+          <div class="chat-bubble chat-assistant">
+            <div class="bubble-avatar">🤖</div>
+            <div class="bubble-content">
+              <p>Xin chào! Tôi là <strong>Trợ lý AI Cố vấn Du học ScholarMatch</strong>. Tôi được tích hợp mô hình ngôn ngữ lớn (RAG) kết nối trực tiếp với cơ sở dữ liệu hơn <strong>7,944+ học bổng quốc tế</strong> trong Supabase.</p>
+              <p>Tôi đã nhận diện hồ sơ của bạn (<strong>GPA 2.45</strong>, <strong>IELTS 4.5</strong>, chuyên ngành <strong>Trí tuệ Nhân tạo</strong>, mục tiêu các trường <strong>Hàn Quốc</strong>). Bạn đang quan tâm đến lộ trình nâng chuẩn tiêu chí hay muốn tìm trường phù hợp nhất? Hãy gửi câu hỏi cho tôi nhé!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <div class="chat-input-bar">
+          <textarea id="chat-input" class="chat-textarea" placeholder="Nhập câu hỏi của bạn (ví dụ: Cần chuẩn bị lộ trình gì để đạt học bổng PNU với hồ sơ hiện tại?)..." rows="1"></textarea>
+          <button class="btn btn-primary btn-send" id="btn-send-chat" title="Gửi tin nhắn" aria-label="Gửi tin nhắn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: PHÂN TÍCH TIÊU CHUẨN CHI TIẾT & LỘ TRÌNH HÀNH ĐỘNG (GAP ANALYSIS MODAL) -->
+  <div class="modal-backdrop" id="modal-gap-analysis" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modal-scholarship-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <span class="modal-badge-tier" id="modal-tier-badge">Group A</span>
+          <h3 class="modal-title" id="modal-scholarship-title">Tên Học Bổng</h3>
+          <p class="modal-subtitle" id="modal-scholarship-meta">Quốc gia | Bậc học | Mức tài trợ</p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-modal" aria-label="Đóng modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Match Score Big Banner -->
+        <div class="gap-score-banner">
+          <div class="score-radial">
+            <svg class="score-radial-svg" width="90" height="90" viewBox="0 0 90 90">
+              <circle class="score-radial-bg" cx="45" cy="45" r="38" />
+              <circle class="score-radial-bar" id="modal-score-svg-bar" cx="45" cy="45" r="38" stroke-dasharray="238.76" stroke-dashoffset="20" />
+            </svg>
+            <div class="score-radial-text">
+              <span class="score-number" id="modal-score-number">94.2%</span>
+              <span class="score-label">Phù hợp</span>
+            </div>
+          </div>
+          <div class="score-summary">
+            <h4 class="summary-headline" id="modal-summary-headline">Khả năng trúng tuyển</h4>
+            <p class="summary-text" id="modal-explanation-text">Đang tải đánh giá chi tiết từ bộ máy AI...</p>
+          </div>
+        </div>
+
+        <!-- 5-Factor Score Breakdown (White-box Reranker) -->
+        <div class="breakdown-grid-box">
+          <div class="box-title-wrap">
+            <h4 class="box-title">Điểm Số Đánh Giá 5 Chiều Học Thuật (White-box Reranker)</h4>
+            <span class="box-tag-info">Trọng số minh bạch chuẩn hóa 100%</span>
+          </div>
+          <div class="factor-bars" id="modal-factor-bars"></div>
+        </div>
+
+        <!-- Strengths vs Gaps Comparison Columns -->
+        <div class="strengths-gaps-grid">
+          <div class="col-box box-strengths">
+            <h4 class="box-title title-green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Tiêu Chí Đã Đạt (Strengths)
+            </h4>
+            <ul class="criteria-list" id="modal-strengths-list"></ul>
+          </div>
+
+          <div class="col-box box-gaps">
+            <h4 class="box-title title-amber">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Tiêu Chí Cần Nâng Cấp Thêm (Gaps)
+            </h4>
+            <ul class="criteria-list" id="modal-gaps-list"></ul>
+          </div>
+        </div>
+
+        <!-- Document Checklist -->
+        <div class="checklist-box">
+          <h4 class="box-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Danh Mục Hồ Sơ Cần Nộp (Checklist)
+          </h4>
+          <div class="checklist-tags" id="modal-checklist-tags"></div>
+        </div>
+
+        <!-- Action Plan Steps -->
+        <div class="action-plan-box">
+          <h4 class="box-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Lộ Trình Hành Động Chi Tiết Để Đạt Điều Kiện (Action Roadmap)
+          </h4>
+          <div class="plan-steps" id="modal-action-steps"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="btn-modal-ask-ai">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Hỏi AI Về Học Bổng Này
+        </button>
+        <a href="#" target="_blank" class="btn btn-outline" id="modal-link-official" rel="noopener noreferrer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Trang Đăng Ký Chính Thức
+        </a>
+        <button class="btn btn-secondary" id="btn-close-modal-bottom">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
