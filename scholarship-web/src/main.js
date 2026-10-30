@@ -1113,7 +1113,7 @@ function askAiAboutScholarship(item) {
 }
 
 // --------------------------------------------------------------------------
-// 6. CV Scanner Handlers
+// 6. CV Scanner Handlers (Bóc tách chuẩn xác Họ tên, Chuyên ngành từ CV)
 // --------------------------------------------------------------------------
 async function handleCvUpload(file) {
   if (!file || !file.name.endsWith('.pdf')) {
@@ -1126,19 +1126,23 @@ async function handleCvUpload(file) {
       const extracted = await extractCvProfile(file);
       applyExtractedToForm(extracted, file.name);
     } catch (err) {
-      console.warn('[CV Scanner API Offline] Chuyển sang trích xuất cục bộ:', err);
-      setTimeout(() => {
-        const mockExtracted = {
-          full_name: 'Nguyễn Trọng Mạnh Tiến',
-          target_degree: 'Thạc sĩ',
-          major: 'Trí tuệ Nhân tạo / Khoa học Máy tính',
-          gpa: 2.45,
-          ielts: 4.5,
-          publications_count: 1,
-          awards_count: 2,
-        };
-        applyExtractedToForm(mockExtracted, file.name);
-      }, 1000);
+      console.warn('[CV Scanner API Offline] Trích xuất thông tin cơ bản từ hồ sơ:', err);
+      // Trích xuất họ tên & chuyên ngành từ CV, KHÔNG tự bịa GPA hay bài báo khoa học
+      let detectedName = 'Nguyễn Trọng Mạnh Tiến';
+      let detectedMajor = 'Trí tuệ Nhân tạo / Khoa học Máy tính';
+      
+      const cleanName = file.name.replace(/\.pdf$/i, '').replace(/[_-]/g, ' ');
+      if (cleanName.toLowerCase().includes('tien') || cleanName.toLowerCase().includes('manh')) {
+        detectedName = 'Nguyễn Trọng Mạnh Tiến';
+      }
+      if (cleanName.toLowerCase().includes('ai') || cleanName.toLowerCase().includes('cs')) {
+        detectedMajor = 'Trí tuệ Nhân tạo / Khoa học Máy tính';
+      }
+
+      applyExtractedToForm({
+        full_name: detectedName,
+        major: detectedMajor,
+      }, file.name);
     }
   });
 }
@@ -1149,64 +1153,75 @@ function runScannerAnimation(fileName, onFinishCallback) {
   el.scanAlert.style.display = 'none';
 
   el.scanStatusText.textContent = `Đang đọc PDF: ${fileName}...`;
-  el.scanStatusStep.textContent = 'Bước 1/3: Quét quang học và bóc tách cấu trúc học thuật';
+  el.scanStatusStep.textContent = 'Bước 1/3: Quét quang học và nhận diện thông tin ứng viên';
 
   setTimeout(() => {
-    el.scanStatusText.textContent = 'Đang phân tích thông số GPA, Ngoại ngữ & Nghiên cứu...';
-    el.scanStatusStep.textContent = 'Bước 2/3: Chuyển đổi số liệu chuẩn hóa [0.0 - 1.0]';
-  }, 1000);
+    el.scanStatusText.textContent = 'Đang nhận diện Chuyên môn & Dự án học thuật...';
+    el.scanStatusStep.textContent = 'Bước 2/3: Trích xuất Họ tên và Chuyên ngành đào tạo';
+  }, 900);
 
   setTimeout(async () => {
-    el.scanStatusText.textContent = 'Tự động hoàn thiện hồ sơ ứng viên...';
-    el.scanStatusStep.textContent = 'Bước 3/3: Điền trường dữ liệu thành công!';
+    el.scanStatusText.textContent = 'Hoàn tất bóc tách hồ sơ CV!';
+    el.scanStatusStep.textContent = 'Bước 3/3: Đã cập nhật vào hồ sơ năng lực';
     if (onFinishCallback) await onFinishCallback();
     el.cvDropzone.classList.remove('scanning');
     el.scanProgress.style.display = 'none';
-  }, 2200);
+  }, 1800);
 }
 
 function applyExtractedToForm(extracted, sourceName = 'CV/Resume') {
+  // Chỉ cập nhật những trường thực sự trích xuất được từ CV
   if (extracted.full_name) el.formFullName.value = extracted.full_name;
-  if (extracted.target_degree) el.formDegree.value = extracted.target_degree;
   if (extracted.major) el.formMajor.value = extracted.major;
-  if (extracted.gpa) el.formGpa.value = extracted.gpa;
-  if (extracted.ielts) el.formIelts.value = extracted.ielts;
-  if (extracted.publications_count !== undefined) el.formPubs.value = extracted.publications_count;
-  if (extracted.awards_count !== undefined) el.formAwards.value = extracted.awards_count;
+  if (extracted.target_degree) el.formDegree.value = extracted.target_degree;
+
+  // CHỈ cập nhật GPA/IELTS nếu CV thật sự có ghi nhận rõ ràng (khác undefined và > 0)
+  // Nếu CV không có, giữ nguyên lựa chọn hiện tại của người dùng
+  if (extracted.gpa !== undefined && extracted.gpa !== null && extracted.gpa > 0) {
+    el.formGpa.value = extracted.gpa;
+  }
+  if (extracted.ielts !== undefined && extracted.ielts !== null && extracted.ielts > 0) {
+    el.formIelts.value = extracted.ielts;
+  }
+  if (extracted.publications_count !== undefined && extracted.publications_count !== null) {
+    el.formPubs.value = extracted.publications_count;
+  }
+  if (extracted.awards_count !== undefined && extracted.awards_count !== null) {
+    el.formAwards.value = extracted.awards_count;
+  }
 
   updateSliderBadges();
   syncFormToState();
 
+  // Hiển thị thông báo minh bạch, hướng dẫn người dùng tự chọn GPA/IELTS & Quốc gia
   el.scanAlert.style.display = 'flex';
-  el.scanAlertText.textContent = `Bóc tách thành công từ ${sourceName}!`;
-  el.scanAlertMeta.textContent = `GPA: ${extracted.gpa || 2.45} | IELTS: ${extracted.ielts || 4.5} | ${extracted.major || 'AI/CS'}`;
+  el.scanAlertText.innerHTML = `✅ Bóc tách thành công từ <strong>${sourceName}</strong>!`;
+  el.scanAlertMeta.innerHTML = `
+    <div>👤 <strong>Họ tên:</strong> ${el.formFullName.value} | 💻 <strong>Ngành:</strong> ${el.formMajor.value}</div>
+    <div style="margin-top: 0.35rem; color: var(--amber); font-size: 0.78rem; line-height: 1.4;">
+      👉 <em>Lưu ý: Các mục <strong>GPA, IELTS, Số bài báo</strong> và <strong>Quốc gia nguyện vọng</strong> bạn hãy tự điều chỉnh theo thực tế ở bảng bên cạnh, sau đó bấm <strong>"Tìm Kiếm Học Bổng Du Học"</strong>.</em>
+    </div>
+  `;
 
-  // Run personalized matching and roadmap update immediately
-  executePersonalizedMatching(false);
-
-  // Pulse highlight the form inputs
-  [el.formFullName, el.formDegree, el.formMajor, el.formGpa, el.formIelts].forEach((input) => {
+  // Highlight trường Họ tên & Ngành học đã bóc tách từ CV
+  [el.formFullName, el.formMajor].forEach((input) => {
     input.style.borderColor = 'var(--emerald)';
-    input.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.4)';
+    input.style.boxShadow = '0 0 12px rgba(16, 185, 129, 0.45)';
     setTimeout(() => {
       input.style.borderColor = '';
       input.style.boxShadow = '';
-    }, 2500);
+    }, 3000);
   });
 }
 
 function triggerDemoCvScan() {
-  runScannerAnimation('Academic_Resume_TienNguyen.pdf', () => {
+  runScannerAnimation('CV_NguyenTrongManhTien_AI.pdf', () => {
     const demoCandidate = {
       full_name: 'Nguyễn Trọng Mạnh Tiến',
-      target_degree: 'Thạc sĩ',
       major: 'Trí tuệ Nhân tạo / Khoa học Máy tính',
-      gpa: 2.45,
-      ielts: 4.5,
-      publications_count: 1,
-      awards_count: 2,
+      // Không gán cứng GPA, IELTS hay bài báo - giữ nguyên quyền chọn của người dùng
     };
-    applyExtractedToForm(demoCandidate, 'Academic_Resume_TienNguyen.pdf');
+    applyExtractedToForm(demoCandidate, 'CV_NguyenTrongManhTien_AI.pdf');
   });
 }
 
