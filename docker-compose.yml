@@ -5,7 +5,7 @@ services:
     build:
       context: ./scholarship-ai-service
       dockerfile: Dockerfile
-    image: trongmanh1105/scholarship-backend:latest
+    image: trongmanhhh/webhocbong:backend
     container_name: scholarship-backend
     restart: always
     ports:
@@ -39,7 +39,7 @@ services:
     build:
       context: ./scholarship-web
       dockerfile: Dockerfile
-    image: trongmanh1105/scholarship-frontend:latest
+    image: trongmanhhh/webhocbong:latest
     container_name: scholarship-frontend
     restart: always
     ports:
@@ -50,4 +50,3 @@ services:
         condition: service_healthy
     environment:
       - VITE_API_BASE=http://localhost:7782
-

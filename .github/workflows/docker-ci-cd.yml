@@ -58,7 +58,7 @@ jobs:
             echo "has_secrets=true" >> $GITHUB_OUTPUT
           else
             echo "has_secrets=false" >> $GITHUB_OUTPUT
-            echo "::warning::DOCKERHUB_USERNAME hoac DOCKERHUB_TOKEN chua duoc cai dat trong GitHub Secrets. Docker image duoc build de test."
+            echo "::warning::DOCKERHUB_USERNAME hoặc DOCKERHUB_TOKEN chưa được cài đặt trong GitHub Secrets. Hãy cấu hình để tự động push lên Docker Hub!"
           fi
 
       - name: Log in to Docker Hub
@@ -68,23 +68,23 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push Backend Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./scholarship-ai-service
-          file: ./scholarship-ai-service/Dockerfile
-          push: ${{ steps.check-secrets.outputs.has_secrets == 'true' }}
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanh1105' }}/scholarship-backend:latest
-            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanh1105' }}/scholarship-backend:${{ github.sha }}
-
-      - name: Build and Push Frontend Image
+      - name: Build and Push Frontend Image (trongmanhhh/webhocbong:latest)
         uses: docker/build-push-action@v5
         with:
           context: ./scholarship-web
           file: ./scholarship-web/Dockerfile
           push: ${{ steps.check-secrets.outputs.has_secrets == 'true' }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanh1105' }}/scholarship-frontend:latest
-            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanh1105' }}/scholarship-frontend:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanhhh' }}/webhocbong:latest
+            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanhhh' }}/webhocbong:frontend
+            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanhhh' }}/webhocbong:${{ github.sha }}
 
+      - name: Build and Push Backend Image (trongmanhhh/webhocbong:backend)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./scholarship-ai-service
+          file: ./scholarship-ai-service/Dockerfile
+          push: ${{ steps.check-secrets.outputs.has_secrets == 'true' }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanhhh' }}/webhocbong:backend
+            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanhhh' }}/scholarship-backend:latest
