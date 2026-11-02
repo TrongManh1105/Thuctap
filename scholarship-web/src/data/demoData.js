@@ -593,5 +593,59 @@ export const DEMO_SCHOLARSHIPS = [
       action_plan: ["Ôn thi GRE để bù đắp điểm GPA"]
     },
     explanation: "ETH Zurich là đại học hàng đầu châu Âu. Độ tương thích 68.4% (Group C - Thử thách)."
+  },
+  {
+    id: "ca-vanier-cgs-2026",
+    title: "[Canada] Học bổng Chính phủ Vanier Canada Graduate Scholarship (Vanier CGS)",
+    host_country: "Canada",
+    degree_level: "Thạc sĩ / Tiến sĩ",
+    major_applied: "Khoa học Tự nhiên, Kỹ thuật & Khoa học Máy tính",
+    funding_type: "Toàn phần 100%",
+    funding_details: "Trợ cấp sinh hoạt 50,000 CAD/năm trong 3 năm, tài trợ nghiên cứu toàn diện.",
+    deadline: "2026-11-01",
+    link: "https://vanier.gc.ca/en/home-accueil.html",
+    match_percent: 82.5,
+    tier_group: "Group B (Tiềm năng - Cần cải thiện nhẹ)",
+    score_breakdown: {
+      academic_gpa: 0.80,
+      major_alignment: 0.92,
+      language_score: 0.85,
+      research_extracurricular: 0.80,
+      vector_similarity: 0.90
+    },
+    gap_analysis: {
+      strengths: ["Phù hợp chuyên ngành nghiên cứu ứng dụng"],
+      gaps: ["Cần thư giới thiệu của giáo sư Canada và đề cương nghiên cứu chi tiết"],
+      checklist: [{ document: "Đề cương nghiên cứu (Research Proposal)", status: "Cần chuẩn bị" }],
+      action_plan: ["Liên hệ giáo sư hướng dẫn tại các trường đại học Canada (UofT, UBC, McGill)"]
+    },
+    explanation: "Học bổng danh giá bậc nhất Canada dành cho nghiên cứu sinh quốc tế xuất sắc."
+  },
+  {
+    id: "ca-uoft-fellowship-2026",
+    title: "[Canada] Học bổng Sau Đại học Đại học Toronto (University of Toronto Fellowship)",
+    host_country: "Canada",
+    degree_level: "Thạc sĩ",
+    major_applied: "Khoa học Máy tính, Trí tuệ Nhân tạo",
+    funding_type: "Toàn phần 100%",
+    funding_details: "Miễn toàn bộ học phí và trợ cấp sinh hoạt 25,000 CAD/năm.",
+    deadline: "2026-12-15",
+    link: "https://www.utoronto.ca/",
+    match_percent: 76.8,
+    tier_group: "Group B (Tiềm năng - Cần cải thiện nhẹ)",
+    score_breakdown: {
+      academic_gpa: 0.75,
+      major_alignment: 0.95,
+      language_score: 0.78,
+      research_extracurricular: 0.70,
+      vector_similarity: 0.88
+    },
+    gap_analysis: {
+      strengths: ["Chuyên ngành AI phù hợp cao với phòng Lab tại Toronto"],
+      gaps: ["Điểm GPA cần tối thiểu 3.3/4.0 hoặc tương đương B+"],
+      checklist: [{ document: "Bảng điểm và bài luận SOP", status: "Cần chuẩn bị" }],
+      action_plan: ["Nâng cao điểm IELTS lên 7.0 và hoàn thiện bài luận cá nhân"]
+    },
+    explanation: "Đại học Toronto là trung tâm nghiên cứu AI hàng đầu thế giới với học bổng hấp dẫn."
   }
 ];

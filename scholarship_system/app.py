@@ -232,9 +232,54 @@ def match_v1_endpoint():
         if preferred_countries:
             c_conditions = []
             for c in preferred_countries:
-                c_conditions.append("host_country ILIKE %s")
-                params.append(f"%{c}%")
-            where_clauses.append(f"({' OR '.join(c_conditions)})")
+                c_clean = str(c).strip().lower()
+                if c_clean in ["hàn quốc", "korea"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Hàn Quốc%", "%Korea%"])
+                elif c_clean in ["nhật bản", "japan"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Nhật Bản%", "%Japan%"])
+                elif c_clean in ["trung quốc", "china"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Trung Quốc%", "%China%"])
+                elif c_clean in ["hoa kỳ", "mỹ", "usa", "united states"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Hoa Kỳ%", "%Mỹ%", "%USA%", "%United States%"])
+                elif c_clean in ["vương quốc anh", "anh", "uk", "united kingdom"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Anh%", "%UK%", "%United Kingdom%"])
+                elif c_clean in ["canada"]:
+                    c_conditions.append("host_country ILIKE %s")
+                    params.append("%Canada%")
+                elif c_clean in ["đức", "germany"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Đức%", "%Germany%"])
+                elif c_clean in ["úc", "australia"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Úc%", "%Australia%"])
+                elif c_clean in ["pháp", "france"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Pháp%", "%France%"])
+                elif c_clean in ["hà lan", "netherlands"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Hà Lan%", "%Netherlands%"])
+                elif c_clean in ["singapore"]:
+                    c_conditions.append("host_country ILIKE %s")
+                    params.append("%Singapore%")
+                elif c_clean in ["thụy điển", "sweden"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Thụy Điển%", "%Sweden%"])
+                elif c_clean in ["thụy sĩ", "switzerland"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Thụy Sĩ%", "%Switzerland%"])
+                elif c_clean in ["đài loan", "taiwan"]:
+                    c_conditions.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                    params.extend(["%Đài Loan%", "%Taiwan%"])
+                else:
+                    c_conditions.append("host_country ILIKE %s")
+                    params.append(f"%{c}%")
+            if c_conditions:
+                where_clauses.append(f"({' OR '.join(c_conditions)})")
             
         where_sql = " AND ".join(where_clauses)
         query_sql = f"""

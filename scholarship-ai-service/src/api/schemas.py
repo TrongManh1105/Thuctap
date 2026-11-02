@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 class CandidateProfileInput(BaseModel):
     full_name: str = Field(default="Ứng viên", description="Họ và tên")
     target_degree: str = Field(default="Thạc sĩ", description="Bậc học mong muốn: Cử nhân, Thạc sĩ, Tiến sĩ")
-    major: str = Field(description="Chuyên ngành học thuật")
+    major: str = Field(default="Khoa học Máy tính / Công nghệ Thông tin", description="Chuyên ngành học thuật")
     gpa: float = Field(ge=0.0, le=4.0, description="Điểm trung bình tích lũy thang 4.0")
     ielts: Optional[float] = Field(default=0.0, ge=0.0, le=9.0, description="Điểm IELTS")
     topik_level: Optional[int] = Field(default=0, ge=0, le=6, description="Cấp độ tiếng Hàn TOPIK (0-6)")

@@ -1393,7 +1393,7 @@ async function executePersonalizedMatching(shouldScroll = false) {
           return preferred.some((p) => itemCountry.includes(p.toLowerCase()));
         });
         if (state.matchedScholarships.length === 0) {
-          state.matchedScholarships = res.scholarships;
+          state.matchedScholarships = [];
         }
       } else {
         state.matchedScholarships = res.scholarships;
@@ -1440,11 +1440,19 @@ function calculatePersonalizedMatchingLocal(profile) {
           itemCountry.includes(pNorm) ||
           pNorm.includes(itemCountry) ||
           (pNorm.includes('hàn') && (itemCountry.includes('hàn') || itemCountry.includes('korea'))) ||
-          (pNorm.includes('nhật') && (itemCountry.includes('nhật') || itemCountry.includes('japan')))
+          (pNorm.includes('nhật') && (itemCountry.includes('nhật') || itemCountry.includes('japan'))) ||
+          (pNorm.includes('canada') && itemCountry.includes('canada')) ||
+          (pNorm.includes('đức') && (itemCountry.includes('đức') || itemCountry.includes('germany'))) ||
+          (pNorm.includes('úc') && (itemCountry.includes('úc') || itemCountry.includes('australia'))) ||
+          (pNorm.includes('pháp') && (itemCountry.includes('pháp') || itemCountry.includes('france'))) ||
+          (pNorm.includes('singapore') && itemCountry.includes('singapore'))
         );
       });
     });
-    if (matched.length > 0) pool = matched;
+    pool = matched;
+    if (pool.length === 0) {
+      return [];
+    }
   }
 
   function scoreScholarship(item, isTarget) {
