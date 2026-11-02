@@ -1387,17 +1387,7 @@ async function executePersonalizedMatching(shouldScroll = false) {
     }
 
     if (res && res.scholarships && res.scholarships.length > 0) {
-      if (preferred.length > 0) {
-        state.matchedScholarships = res.scholarships.filter((item) => {
-          const itemCountry = (item.host_country || '').toLowerCase();
-          return preferred.some((p) => itemCountry.includes(p.toLowerCase()));
-        });
-        if (state.matchedScholarships.length === 0) {
-          state.matchedScholarships = [];
-        }
-      } else {
-        state.matchedScholarships = res.scholarships;
-      }
+      state.matchedScholarships = res.scholarships;
     } else {
       state.matchedScholarships = calculatePersonalizedMatchingLocal(state.profile);
     }

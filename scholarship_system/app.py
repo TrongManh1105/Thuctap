@@ -208,6 +208,22 @@ def get_catalog_v1():
         print(f"[-] Lỗi catalog: {e}")
         return jsonify({"total": 0, "page": 1, "limit": 24, "items": []})
 
+def _extract_uni_keywords(u_str):
+    import re
+    keywords = set()
+    for m in re.findall(r'\((.*?)\)', u_str):
+        if len(m.strip()) >= 2:
+            keywords.add(m.strip())
+    clean = re.sub(r'\(.*?\)', '', u_str)
+    for p in ['đại học quốc gia', 'đại học', 'viện khoa học và công nghệ', 'viện', 'trường', 'học viện', 'university']:
+        clean = re.sub(p, '', clean, flags=re.IGNORECASE)
+    clean = clean.strip()
+    if len(clean) >= 2:
+        keywords.add(clean)
+        clean_unaccent = clean.replace('ä', 'a').replace('ö', 'o').replace('ü', 'u').replace('é', 'e')
+        keywords.add(clean_unaccent)
+    return list(keywords)
+
 @app.route("/api/v1/scholarships/match", methods=["POST"])
 def match_v1_endpoint():
     try:
@@ -220,6 +236,7 @@ def match_v1_endpoint():
         ielts = float(profile.get("ielts", 4.5))
         major = profile.get("major", "Khoa học Máy tính")
         preferred_countries = filters.get("countries") or profile.get("preferred_countries") or []
+        target_universities = profile.get("target_universities") or []
         
         conn = get_db_connection()
         if not conn:
@@ -227,6 +244,80 @@ def match_v1_endpoint():
             
         cur = conn.cursor()
         
+        target_scholarships = []
+        target_ids = []
+        
+        # ---------------------------------------------------------------------
+        # TẦNG 1: ƯU TIÊN DUYỆT ĐÚNG TRƯỜNG MỤC TIÊU (A, B, C) ĐÃ CHỌN
+        # ---------------------------------------------------------------------
+        if target_universities:
+            all_target_kws = []
+            for u in target_universities:
+                all_target_kws.extend(_extract_uni_keywords(str(u)))
+            
+            if all_target_kws:
+                t_clauses = []
+                t_params = []
+                for kw in all_target_kws:
+                    t_clauses.append("(title ILIKE %s OR source_name ILIKE %s OR raw_content ILIKE %s)")
+                    t_params.extend([f"%{kw}%", f"%{kw}%", f"%{kw}%"])
+                
+                t_sql = f"""
+                    SELECT id, title, source_name, host_country, degree_level, major_applied,
+                           funding_type, funding_details, min_gpa, min_ielts, min_work_exp_years,
+                           deadline, apply_method, link, checklist, commitment
+                    FROM scholarships
+                    WHERE ({" OR ".join(t_clauses)})
+                    LIMIT 10;
+                """
+                cur.execute(t_sql, t_params)
+                for r in cur.fetchall():
+                    target_ids.append(str(r[0]))
+                    req_gpa = float(r[8] or 3.0)
+                    req_ielts = float(r[9] or 6.0)
+                    academic = min(1.0, max(0.5, gpa / req_gpa))
+                    lang = min(1.0, max(0.5, ielts / req_ielts))
+                    final_pct = round((academic * 0.35 + lang * 0.20 + 0.92 * 0.20 + 0.98 * 0.15 + 0.85 * 0.10) * 100, 1)
+                    
+                    is_qual = (gpa >= req_gpa - 0.3) and (ielts >= req_ielts - 0.5)
+                    cat = "TARGET_QUALIFIED" if is_qual else "TARGET_AMBITIOUS"
+                    cat_note = "🎯 Trường Mục Tiêu (Đạt Chuẩn Xét Tuyển)" if is_qual else "🎯 Trường Mục Tiêu (Cần Nâng Điểm)"
+                    t_grp = "Group A (Đạt chuẩn xét tuyển)" if is_qual else "Group B (Tiềm năng - Cần cải thiện nhẹ)"
+                    
+                    gaps = {}
+                    if gpa < req_gpa:
+                        gaps["gpa"] = f"GPA hiện tại {gpa:.2f}/4.0 < Yêu cầu {req_gpa:.2f}/4.0 (Thiếu {round(req_gpa - gpa, 2):.2f} điểm)"
+                    if ielts < req_ielts:
+                        gaps["ielts"] = f"IELTS hiện tại {ielts:.1f} < Yêu cầu {req_ielts:.1f} (Cần nâng +{round(req_ielts - ielts, 1):.1f} band)"
+                    
+                    target_scholarships.append({
+                        "id": str(r[0]),
+                        "title": r[1] or "Học bổng",
+                        "source_name": r[2],
+                        "host_country": r[3],
+                        "degree_level": r[4],
+                        "major_applied": r[5],
+                        "funding_type": r[6],
+                        "funding_details": r[7],
+                        "deadline": format_deadline(r[11]),
+                        "link": r[13],
+                        "match_percent": final_pct,
+                        "tier_group": t_grp,
+                        "category": cat,
+                        "target_status_note": cat_note,
+                        "score_breakdown": {
+                            "academic_gpa": round(academic, 2),
+                            "major_alignment": 0.92,
+                            "language_score": round(lang, 2),
+                            "research_extracurricular": 0.85,
+                            "vector_similarity": 0.98
+                        },
+                        "gap_analysis": gaps
+                    })
+        
+        # ---------------------------------------------------------------------
+        # TẦNG 2: GỢI Ý CÁC TRƯỜNG PHÙ HỢP CÙNG QUỐC GIA ĐÃ CHỌN
+        # ---------------------------------------------------------------------
         where_clauses = ["1=1"]
         params = []
         if preferred_countries:
@@ -280,8 +371,13 @@ def match_v1_endpoint():
                     params.append(f"%{c}%")
             if c_conditions:
                 where_clauses.append(f"({' OR '.join(c_conditions)})")
+        
+        if target_ids:
+            where_clauses.append("id::text NOT IN %s")
+            params.append(tuple(target_ids))
             
         where_sql = " AND ".join(where_clauses)
+        limit_alts = max(10, 30 - len(target_scholarships))
         query_sql = f"""
             SELECT id, title, source_name, host_country, degree_level, major_applied,
                    funding_type, funding_details, min_gpa, min_ielts, min_work_exp_years,
@@ -289,17 +385,16 @@ def match_v1_endpoint():
             FROM scholarships
             WHERE {where_sql}
             ORDER BY min_gpa ASC NULLS LAST, created_at DESC
-            LIMIT 30;
+            LIMIT {limit_alts};
         """
         cur.execute(query_sql, params)
         rows = cur.fetchall()
         
-        scholarships = []
+        alt_scholarships = []
         for r in rows:
             req_gpa = float(r[8] or 3.0)
             req_ielts = float(r[9] or 6.0)
             
-            # White-box 5 components
             academic = min(1.0, max(0.5, gpa / req_gpa))
             lang = min(1.0, max(0.5, ielts / req_ielts))
             align = 0.92
@@ -310,14 +405,16 @@ def match_v1_endpoint():
             f_type = r[6] or ""
             t_group = "GROUP A" if (final_pct >= 85 or "Toàn phần" in f_type) else ("GROUP B" if final_pct >= 70 else "GROUP C")
             
-            # Gap
+            cat = "RECOMMENDED_ALTERNATIVE" if target_universities else "STANDARD"
+            cat_note = "🛡️ Phương Án An Toàn Cùng Quốc Gia (Tỉ Lệ Đỗ Cao)" if target_universities else ""
+            
             gaps = {}
             if gpa < req_gpa:
                 gaps["gpa"] = f"GPA hiện tại {gpa:.2f}/4.0 < Yêu cầu {req_gpa:.2f}/4.0 (Thiếu {round(req_gpa - gpa, 2):.2f} điểm)"
             if ielts < req_ielts:
                 gaps["ielts"] = f"IELTS hiện tại {ielts:.1f} < Yêu cầu {req_ielts:.1f} (Cần nâng +{round(req_ielts - ielts, 1):.1f} band)"
                 
-            scholarships.append({
+            alt_scholarships.append({
                 "id": str(r[0]),
                 "title": r[1] or "Học bổng",
                 "source_name": r[2],
@@ -330,6 +427,8 @@ def match_v1_endpoint():
                 "link": r[13],
                 "match_percent": final_pct,
                 "tier_group": t_group,
+                "category": cat,
+                "target_status_note": cat_note,
                 "score_breakdown": {
                     "academic_gpa": round(academic, 2),
                     "major_alignment": round(align, 2),
@@ -343,10 +442,20 @@ def match_v1_endpoint():
         cur.close()
         conn.close()
         
-        scholarships.sort(key=lambda s: s["match_percent"], reverse=True)
+        # Sắp xếp các trường an toàn theo điểm
+        alt_scholarships.sort(key=lambda s: s["match_percent"], reverse=True)
+        # Kết hợp: CÁC TRƯỜNG MỤC TIÊU LUÔN NẰM TRÊN CÙNG ĐẦU BẢNG XẾP HẠNG
+        final_scholarships = target_scholarships + alt_scholarships
+        
+        t_status = "NONE"
+        if target_universities:
+            t_status = "SATISFIED" if any(s["category"] == "TARGET_QUALIFIED" for s in target_scholarships) else "RELAXED_EXPANDED"
+            
         return jsonify({
-            "total_found": len(scholarships),
-            "scholarships": scholarships
+            "total_found": len(final_scholarships),
+            "scholarships": final_scholarships,
+            "target_matched_status": t_status,
+            "target_universities": target_universities
         })
     except Exception as e:
         print(f"[-] Lỗi match v1: {e}")
