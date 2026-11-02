@@ -10,6 +10,7 @@ class CandidateProfileInput(BaseModel):
     ielts: Optional[float] = Field(default=0.0, ge=0.0, le=9.0, description="Điểm IELTS")
     topik_level: Optional[int] = Field(default=0, ge=0, le=6, description="Cấp độ tiếng Hàn TOPIK (0-6)")
     preferred_countries: Optional[List[str]] = Field(default_factory=list, description="Danh sách quốc gia mong muốn")
+    target_universities: Optional[List[str]] = Field(default_factory=list, description="Danh sách trường mục tiêu A, B, C mong muốn")
     work_experience_years: Optional[float] = Field(default=0.0, ge=0.0)
     research_experience_years: Optional[float] = Field(default=0.0, ge=0.0)
     publications_count: Optional[int] = Field(default=0, ge=0)
@@ -30,6 +31,7 @@ class MatchRequest(BaseModel):
 class ScholarshipResult(BaseModel):
     id: Any
     title: str
+    source_name: Optional[str] = None
     host_country: Optional[str] = None
     degree_level: Optional[str] = None
     major_applied: Optional[str] = None
@@ -42,11 +44,16 @@ class ScholarshipResult(BaseModel):
     score_breakdown: Dict[str, float]
     gap_analysis: Optional[Dict[str, Any]] = None
     explanation: Optional[str] = None
+    category: Optional[str] = "STANDARD"  # TARGET_QUALIFIED, TARGET_AMBITIOUS, RECOMMENDED_ALTERNATIVE, STANDARD
+    target_status_note: Optional[str] = None
 
 
 class MatchResponse(BaseModel):
     total_found: int
     scholarships: List[ScholarshipResult]
+    target_matched_status: Optional[str] = "NONE"  # NONE, SATISFIED, RELAXED_EXPANDED
+    target_universities: Optional[List[str]] = Field(default_factory=list)
+    target_gaps_summary: Optional[Dict[str, Any]] = None
 
 
 class ScholarshipCatalogItem(BaseModel):

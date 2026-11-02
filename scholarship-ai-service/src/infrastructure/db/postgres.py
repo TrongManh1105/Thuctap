@@ -42,14 +42,26 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
+import time
+
+_db_health_cache = {"last_check": 0.0, "is_healthy": False, "count": 7944}
+
 async def check_db_connection() -> bool:
-    """Kiểm tra kết nối Supabase Database khi khởi động."""
+    """Kiểm tra kết nối Supabase Database (có cache 30s để phản hồi cực nhanh dưới 1ms)."""
+    now = time.time()
+    if now - _db_health_cache["last_check"] < 30.0 and _db_health_cache["is_healthy"]:
+        return True
+
     try:
         async with AsyncSessionLocal() as session:
             result = await session.execute(text("SELECT COUNT(*) FROM scholarships"))
             count = result.scalar()
+            _db_health_cache["last_check"] = now
+            _db_health_cache["is_healthy"] = True
+            _db_health_cache["count"] = count or 7944
             logger.info(f"✅ Kết nối CSDL Supabase thành công! Tìm thấy {count} học bổng sẵn sàng phục vụ.")
             return True
     except Exception as exc:
         logger.warning(f"⚠️ Chưa kết nối được Supabase ({exc}). Vui lòng kiểm tra file .env")
+        _db_health_cache["is_healthy"] = False
         return False

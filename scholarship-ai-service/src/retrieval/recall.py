@@ -159,3 +159,87 @@ async def recall_scholarships(
         candidate_vec=candidate_vec,
         limit=top_k,
     )
+
+
+async def recall_target_scholarships(
+    session: AsyncSession,
+    target_unis: List[str],
+    candidate_profile: Dict[str, Any],
+    preferred_countries: Optional[List[str]] = None,
+    limit: int = 15,
+) -> List[Dict[str, Any]]:
+    """
+    Tầng 1: Recall ưu tiên cho các trường Đại học mục tiêu (A, B, C).
+    Truy vấn chính xác các học bổng thuộc các trường mục tiêu đã chọn.
+    """
+    if not target_unis:
+        return []
+
+    conditions = []
+    params: Dict[str, Any] = {"limit": limit}
+
+    # Điều kiện trường mục tiêu
+    uni_clauses = []
+    for idx, u in enumerate(target_unis):
+        p_name = f"uni_{idx}"
+        uni_clauses.append(f"(source_name ILIKE :{p_name} OR title ILIKE :{p_name})")
+        params[p_name] = f"%{u.strip()}%"
+    conditions.append(f"({' OR '.join(uni_clauses)})")
+
+    # Điều kiện quốc gia nếu có
+    if preferred_countries:
+        c_clauses = []
+        for idx, c in enumerate(preferred_countries):
+            aliases = expand_country_aliases(c)
+            for a_idx, a in enumerate(aliases):
+                p_cname = f"c_{idx}_{a_idx}"
+                c_clauses.append(f"host_country ILIKE :{p_cname}")
+                params[p_cname] = f"%{a}%"
+        if c_clauses:
+            conditions.append(f"({' OR '.join(c_clauses)})")
+
+    # Bậc học nếu có
+    target_degree = candidate_profile.get("target_degree")
+    if target_degree:
+        conditions.append("(degree_level ILIKE :deg OR degree_level IS NULL OR degree_level ILIKE '%Mọi bậc%')")
+        params["deg"] = f"%{target_degree.strip()}%"
+
+    where_sql = " AND ".join(conditions)
+
+    candidate_vec = candidate_profile.get("profile_vector")
+    if candidate_vec and len(candidate_vec) == settings.EMBEDDING_DIM:
+        params["vec"] = str(candidate_vec)
+        query = f"""
+            SELECT 
+                id, title, source_name, host_country, degree_level,
+                major_applied, funding_type, funding_details,
+                min_gpa, min_ielts, min_work_exp_years,
+                deadline, apply_method, link, checklist, commitment,
+                (1.0 - (embedding <=> CAST(:vec AS vector))) AS vector_similarity
+            FROM scholarships
+            WHERE {where_sql}
+            ORDER BY embedding <=> CAST(:vec AS vector) ASC
+            LIMIT :limit
+        """
+    else:
+        query = f"""
+            SELECT 
+                id, title, source_name, host_country, degree_level,
+                major_applied, funding_type, funding_details,
+                min_gpa, min_ielts, min_work_exp_years,
+                deadline, apply_method, link, checklist, commitment,
+                0.85 AS vector_similarity
+            FROM scholarships
+            WHERE {where_sql}
+            ORDER BY created_at DESC
+            LIMIT :limit
+        """
+
+    try:
+        result = await session.execute(text(query), params)
+        rows = [dict(row) for row in result.mappings().all()]
+        logger.info(f"[Target Recall] Tìm thấy {len(rows)} học bổng cho các trường mục tiêu: {target_unis}")
+        return rows
+    except Exception as exc:
+        logger.error(f"[Target Recall] Lỗi truy vấn trường mục tiêu: {exc}")
+        return []

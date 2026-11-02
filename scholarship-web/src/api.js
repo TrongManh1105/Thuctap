@@ -14,7 +14,7 @@ export async function checkBackendHealth() {
   try {
     const res = await fetch(`${API_BASE}/health/ready`, {
       headers: { 'X-API-Key': API_KEY },
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(6000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -26,7 +26,7 @@ export async function checkBackendHealth() {
     try {
       const proxyRes = await fetch('/health/ready', {
         headers: { 'X-API-Key': API_KEY },
-        signal: AbortSignal.timeout(2000),
+        signal: AbortSignal.timeout(4000),
       });
       if (proxyRes.ok) {
         const data = await proxyRes.json();

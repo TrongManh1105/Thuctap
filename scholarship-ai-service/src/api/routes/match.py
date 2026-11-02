@@ -80,7 +80,7 @@ async def get_scholarship_catalog(
         if f_clean == "full":
             where_clauses.append("(funding_type ILIKE '%Toàn phần%' OR funding_type ILIKE '%100%')")
         elif f_clean == "partial":
-            where_clauses.append("(funding_type ILIKE '%Bán phần%' OR funding_type ILIKE '%50%')")
+            where_clauses.append("(funding_type ILIKE '%Bán phần%' OR funding_type ILIKE '%50%' OR funding_type ILIKE '%Partial%' OR funding_type ILIKE '%Học phí%')")
         elif f_clean == "tuition":
             where_clauses.append("(funding_type ILIKE '%Học phí%' OR funding_type ILIKE '%Tuition%')")
 
@@ -192,7 +192,7 @@ async def match_scholarships(
 ):
     logger.info(f"[Match] Bắt đầu tìm kiếm học bổng cho ứng viên: {request.candidate_profile.full_name} ({request.candidate_profile.major})")
     
-    results = await run_scholarship_pipeline(
+    results, target_status, target_gaps = await run_scholarship_pipeline(
         session=db,
         candidate_profile=request.candidate_profile.model_dump(),
         filters=request.filters,
@@ -205,4 +205,7 @@ async def match_scholarships(
     return MatchResponse(
         total_found=len(results),
         scholarships=results,
+        target_matched_status=target_status,
+        target_universities=request.candidate_profile.target_universities,
+        target_gaps_summary=target_gaps,
     )

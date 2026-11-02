@@ -1,0 +1,89 @@
+name: Build, Test & Push Docker Hub CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  # 1. Kiểm tra cú pháp & Build thử nghiệm cả Backend và Frontend
+  test-and-verify:
+    name: Verify Python Backend & Vite Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify Backend Dependencies & Syntax
+        run: |
+          cd scholarship-ai-service
+          pip install --no-cache-dir -r requirements.txt
+          python -m py_compile main.py
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify Frontend Build
+        run: |
+          cd scholarship-web
+          npm install
+          npm run build
+
+  # 2. Đóng gói Docker Images và Đẩy lên Docker Hub
+  build-and-push:
+    name: Build & Push Docker Hub Images
+    needs: test-and-verify
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Check Docker Hub Secrets
+        id: check-secrets
+        run: |
+          if [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ] && [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            echo "::warning::DOCKERHUB_USERNAME hoac DOCKERHUB_TOKEN chua duoc cai dat trong GitHub Secrets. Docker image duoc build de test."
+          fi
+
+      - name: Log in to Docker Hub
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./scholarship-ai-service
+          file: ./scholarship-ai-service/Dockerfile
+          push: ${{ steps.check-secrets.outputs.has_secrets == 'true' }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanh1105' }}/scholarship-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanh1105' }}/scholarship-backend:${{ github.sha }}
+
+      - name: Build and Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./scholarship-web
+          file: ./scholarship-web/Dockerfile
+          push: ${{ steps.check-secrets.outputs.has_secrets == 'true' }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanh1105' }}/scholarship-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME || 'trongmanh1105' }}/scholarship-frontend:${{ github.sha }}
