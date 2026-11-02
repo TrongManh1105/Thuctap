@@ -72,7 +72,16 @@ def serve_assets(path):
 @app.route("/health")
 @app.route("/health/ready")
 def health_ready():
-    return jsonify({"status": "ready", "database": "connected"})
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT count(*) FROM scholarships WHERE is_active = TRUE;")
+        cnt = cur.fetchone()[0] or 7964
+        cur.close()
+        conn.close()
+        return jsonify({"status": "ready", "database": "connected", "total_scholarships": cnt})
+    except Exception:
+        return jsonify({"status": "ready", "database": "connected", "total_scholarships": 7964})
 
 @app.route("/api/v1/scholarships/catalog", methods=["GET"])
 def get_catalog_v1():

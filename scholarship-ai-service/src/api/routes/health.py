@@ -15,5 +15,10 @@ async def readiness_check():
     """Readiness probe kiểm tra kết nối Database PostgreSQL."""
     is_db_ready = await check_db_connection()
     if is_db_ready:
-        return {"status": "ready", "database": "connected"}
+        from src.infrastructure.db.postgres import _db_health_cache
+        return {
+            "status": "ready",
+            "database": "connected",
+            "total_scholarships": _db_health_cache.get("count", 7964),
+        }
     return {"status": "degraded", "database": "disconnected"}

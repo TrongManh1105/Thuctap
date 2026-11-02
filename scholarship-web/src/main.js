@@ -200,18 +200,37 @@ function toggleTheme() {
   localStorage.setItem('theme', state.theme);
 }
 
+function updateTotalScholarshipCountEverywhere(count) {
+  if (!count) return;
+  const num = Number(count);
+  const formatted = num.toLocaleString('vi-VN');
+  if (el.backendStatusText && state.backendConnected) {
+    el.backendStatusText.textContent = `Supabase: ${formatted}+ Học bổng`;
+  }
+  const metricEl = document.getElementById('metric-total-scholarships');
+  if (metricEl) metricEl.textContent = `${formatted}+`;
+  const heroEl = document.getElementById('hero-total-scholarships');
+  if (heroEl) heroEl.textContent = `${formatted}+ học bổng toàn cầu`;
+  const subtitleEl = document.getElementById('catalog-subtitle-total');
+  if (subtitleEl) subtitleEl.textContent = `${formatted}+`;
+  const chatSubtitleEl = document.getElementById('chat-subtitle-total');
+  if (chatSubtitleEl) chatSubtitleEl.textContent = `${formatted}+`;
+}
+
 // Health Check with Backend
 async function checkHealth() {
   const result = await checkBackendHealth();
   if (result.connected) {
     state.backendConnected = true;
-    el.backendStatusText.textContent = 'Supabase: 7,949+ Học bổng';
+    const totalCount = result.data?.total_scholarships || state.catalogTotal || 7964;
+    el.backendStatusText.textContent = `Supabase: ${Number(totalCount).toLocaleString('vi-VN')}+ Học bổng`;
+    updateTotalScholarshipCountEverywhere(totalCount);
     el.backendStatusPill.style.color = 'var(--emerald)';
     el.backendStatusPill.style.borderColor = 'rgba(16, 185, 129, 0.4)';
     el.backendStatusPill.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
   } else {
     state.backendConnected = false;
-    el.backendStatusText.textContent = 'Offline Demo Mode (7,949 Học bổng)';
+    el.backendStatusText.textContent = 'Offline Demo Mode (7.964 Học bổng)';
     el.backendStatusPill.style.color = 'var(--amber)';
     el.backendStatusPill.style.borderColor = 'rgba(245, 158, 11, 0.4)';
     el.backendStatusPill.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
@@ -287,6 +306,9 @@ async function renderCatalogFeed(resetPage = true) {
       state.isLoadingCatalog = false;
       const total = res.total || 0;
       state.catalogTotal = total;
+      if (!query && (!country || country === 'all') && (!funding || funding === 'all')) {
+        updateTotalScholarshipCountEverywhere(total);
+      }
 
       const newItems = (res.items || []).map((item) => {
         return {
