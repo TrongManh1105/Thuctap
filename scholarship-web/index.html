@@ -395,6 +395,58 @@
               </div>
             </div>
 
+            <!-- Row 5: Trường Đại Học Mục Tiêu (A, B, C) Ưu Tiên Xét Tuyển (Đã bỏ nút thêm trường) -->
+            <div class="form-group full-width target-unis-box" id="target-unis-group">
+              <div class="label-with-val">
+                <label for="input-custom-target-uni" class="label-highlight">
+                  <span class="target-title-badge">🎯 ƯU TIÊN XÉT TUYỂN</span>
+                  <span>Trường Đại Học Mục Tiêu (A, B, C) Bạn Muốn Học</span>
+                </label>
+                <span class="val-display" id="selected-target-unis-count">Chưa chọn trường mục tiêu nào</span>
+              </div>
+
+              <!-- Selected Target Universities Tags Container -->
+              <div class="target-uni-tags-container" id="selected-target-unis-container">
+                <!-- Sẽ được render động qua JavaScript -->
+              </div>
+
+              <!-- Searchable Combobox & Dropdown Picker (Đã bỏ nút thêm trường) -->
+              <div class="target-uni-combobox-wrapper" id="target-uni-combobox">
+                <div class="combobox-input-field">
+                  <span class="input-prefix-icon">🏛️</span>
+                  <input
+                    type="text"
+                    id="input-custom-target-uni"
+                    class="form-input"
+                    placeholder="🔍 Bấm để chọn trường theo quốc gia đã chọn hoặc gõ tìm kiếm..."
+                    autocomplete="off"
+                  />
+                  <button type="button" class="btn-combobox-toggle" id="btn-toggle-uni-dropdown" title="Mở danh sách trường đại học">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </button>
+                </div>
+
+                <!-- Floating Dropdown Menu Panel -->
+                <div class="uni-dropdown-menu" id="uni-dropdown-menu" style="display: none;">
+                  <div class="uni-dropdown-header">
+                    <span class="dropdown-header-title" id="uni-dropdown-title">🏫 Danh Sách Trường Thuộc Quốc Gia Đã Chọn</span>
+                    <span class="dropdown-header-hint">Click vào trường để chọn</span>
+                  </div>
+                  <div class="uni-dropdown-body" id="uni-dropdown-body">
+                    <!-- Populated dynamically via JS grouped by country -->
+                  </div>
+                </div>
+              </div>
+
+              <div class="target-flow-notice">
+                <span class="notice-icon">💡</span>
+                <p>
+                  <strong>Cách hoạt động:</strong> Bấm vào ô trên để chọn trường từ danh sách các quốc gia bạn đã tích chọn (Hàn Quốc, Trung Quốc...). 
+                  Khi bấm <strong>"Tìm Kiếm Học Bổng"</strong>, hệ thống sẽ đánh giá điều kiện trúng tuyển của trường đó và tự động đề xuất lộ trình nếu chưa đủ chuẩn!
+                </p>
+              </div>
+            </div>
+
             <!-- Row 6: Submit Button -->
             <div class="form-group full-width">
               <button type="button" class="btn btn-primary btn-lg full-width btn-glow" id="btn-run-match">

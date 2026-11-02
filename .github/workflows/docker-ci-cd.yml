@@ -87,3 +87,4 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME || 'trongmanh1105' }}/scholarship-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME || 'trongmanh1105' }}/scholarship-frontend:${{ github.sha }}
+
