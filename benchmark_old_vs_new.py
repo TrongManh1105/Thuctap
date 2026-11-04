@@ -15,7 +15,7 @@ print("   BẢNG SO SÁNH ĐỐI ĐẦU TRỰC QUAN: LUỒNG CŨ (WHITE-BOX) VS 
 print("================================================================================")
 
 # HỒ SƠ THỬ NGHIỆM
-candidate_name = "Nguyễn Trọng Mạnh Tiến"
+candidate_name = "Nguyễn Trọng Mạnh Tiền"
 candidate_major = "Trí tuệ nhân tạo (AI & Machine Learning)"
 candidate_gpa = 2.95
 candidate_ielts = 6.5

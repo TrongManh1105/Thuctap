@@ -126,7 +126,7 @@ with gr.Blocks(title="ScholarMatch AI Engine") as demo:
         gr.Markdown("Nhập tóm tắt hồ sơ sinh viên và 3 mô tả học bổng để mô hình nơ-ron Cross-Attention tính toán điểm tương thích:")
         q_input = gr.Textbox(
             label="Hồ Sơ Ứng Viên",
-            value="Ứng viên: Nguyễn Trọng Mạnh Tiến | Ngành: Trí tuệ nhân tạo / CNTT | GPA: 2.95/4.0 | IELTS: 6.5 | Có 1 bài báo NCKH",
+            value="Ứng viên: Nguyễn Trọng Mạnh Tiền | Ngành: Trí tuệ nhân tạo / CNTT | GPA: 2.95/4.0 | IELTS: 6.5 | Có 1 bài báo NCKH",
             lines=2
         )
         d1_input = gr.Textbox(

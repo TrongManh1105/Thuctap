@@ -126,7 +126,7 @@ def query_recommendations_for_candidate(candidate: dict, top_k: int = 5):
 
 if __name__ == "__main__":
     sample_candidate = {
-        "name": "Nguyễn Trọng Mạnh Tiến",
+        "name": "Nguyễn Trọng Mạnh Tiền",
         "degree_target": "Thạc sĩ",
         "major": "Khoa học Máy tính / Trí tuệ Nhân tạo",
         "research_interest": "Deep Learning, Natural Language Processing, Audio and Speech Processing",

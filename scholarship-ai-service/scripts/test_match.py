@@ -18,7 +18,7 @@ from src.retrieval.pipeline import run_scholarship_pipeline
 
 async def main():
     candidate_profile = {
-        "full_name": "Nguyễn Trọng Mạnh Tiến",
+        "full_name": "Nguyễn Trọng Mạnh Tiền",
         "target_degree": "Thạc sĩ",
         "major": "Trí tuệ Nhân tạo / Khoa học Máy tính",
         "gpa": 3.4,

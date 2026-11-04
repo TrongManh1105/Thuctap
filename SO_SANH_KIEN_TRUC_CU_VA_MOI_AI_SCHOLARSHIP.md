@@ -2,7 +2,7 @@
 ## TỐI ƯU HÓA HỆ THỐNG GỢI Ý HỌC BỔNG TOÀN CẦU (SCHOLARMATCH)
 ### SO SÁNH THỰC NGHIỆM: LUỒNG CŨ (PGVECTOR + WHITE-BOX) vs LUỒNG MỚI (BGE-M3 + DEEP CROSS-ENCODER)
 
-* **Sinh viên thực hiện:** Nguyễn Trọng Mạnh Tiến  
+* **Sinh viên thực hiện:** Nguyễn Trọng Mạnh Tiền  
 * **Đề tài / Dự án:** ScholarMatch - Nền tảng Gợi ý Học bổng & Phân tích Tiêu chí Du học Thông minh  
 * **Kho dữ liệu thực nghiệm:** 7.972+ học bổng toàn cầu (Supabase PostgreSQL)  
 * **Ngày cập nhật:** Tháng 11/2026  
@@ -14,8 +14,20 @@
 ### 1.1. Bản chất và giới hạn kỹ thuật của Luồng Cũ
 Trong giai đoạn đầu phát triển hệ thống, quy trình tìm kiếm và gợi ý học bổng được thiết kế theo kiến trúc truy xuất thông tin truyền thống:
 
-```
-[Hồ sơ ứng viên] ──> [Vector tĩnh 1536D] ──(Cosine pgvector)──> [Top 30 học bổng] ──(Công thức 5 hệ số)──> [Bảng xếp hạng]
+```text
+[Hồ sơ ứng viên: GPA 2.85, IELTS 5.0, Ngành AI]
+                       │
+                       ▼
+[Vector tĩnh 1536D (Bi-Encoder Cosine Độc Lập)]
+                       │
+                       ▼
+[Top 30 học bổng sơ tuyển từ pgvector]
+                       │
+                       ▼
+[White-box Reranker: Công thức 5 hệ số tĩnh]
+                       │
+                       ▼
+[Bảng xếp hạng: Bằng điểm ảo 91.1%, Lọt trường Thụy Sĩ/Ý]
 ```
 
 * **Về mặt Biểu diễn Vector (pgvector 1536D - Bi-Encoder):**
@@ -35,8 +47,20 @@ Trong giai đoạn đầu phát triển hệ thống, quy trình tìm kiếm và
 ### 1.2. Tại sao BGE-M3 và Deep Cross-Encoder là sự thay thế vượt trội?
 Để giải quyết triệt để hai hạn chế trên, kiến trúc đã được nâng cấp lên cặp đôi mô hình State-of-the-Art (SOTA) từ Viện Trí tuệ Nhân tạo Bắc Kinh (BAAI):
 
-```
-[Hồ sơ ứng viên] ──> [BGE-M3 1024D (Dense + Sparse)] ──> [Sơ tuyển học bổng] ──(Deep Cross-Encoder Attention)──> [Bảng xếp hạng tối ưu]
+```text
+[Hồ sơ ứng viên: GPA 2.85, IELTS 5.0, Ngành AI]
+                       │
+                       ▼
+[BGE-M3 Engine: 1024D Dense Semantic + Sparse Lexical]
+                       │
+                       ▼
+[Sơ tuyển đúng Trường Mục Tiêu & Khóa Rào Chắn Quốc Gia]
+                       │
+                       ▼
+[Deep Cross-Encoder: All-to-All Self-Attention Transformer]
+                       │
+                       ▼
+[Bảng xếp hạng tối ưu: Phân hóa chuẩn xác theo từng ngành]
 ```
 
 1. **BAAI BGE-M3 (Embedding Engine 1024 chiều):**
@@ -56,7 +80,7 @@ Trong giai đoạn đầu phát triển hệ thống, quy trình tìm kiếm và
 ## 2. BẢNG SO SÁNH ĐỐI CHIẾU THỰC TẾ TRÊN NỀN TẢNG WEB SCHOLARMATCH
 
 Thực nghiệm được thực hiện trực tiếp trên hệ thống ScholarMatch kết nối cơ sở dữ liệu Supabase với hồ sơ ứng viên điển hình:
-* **Họ tên ứng viên:** Nguyễn Trọng Mạnh Tiến
+* **Họ tên ứng viên:** Nguyễn Trọng Mạnh Tiền
 * **Chỉ số học thuật:** GPA: 2.85 / 4.0 | IELTS: 5.0
 * **Chuyên ngành:** Khoa học Máy tính / Trí tuệ Nhân tạo (AI & Machine Learning)
 * **Quốc gia ưu tiên:** Hàn Quốc, Đài Loan
@@ -97,30 +121,30 @@ Thực nghiệm được thực hiện trực tiếp trên hệ thống ScholarM
 
 ```mermaid
 flowchart TD
-    User([Hồ sơ Ứng viên: GPA, IELTS, Ngành, Mục tiêu, Quốc gia]) --> Step1[Bước 1: Chuẩn hóa dữ liệu & Khóa cứng bộ lọc Quốc gia]
+    User["👤 Hồ sơ Ứng viên (GPA, IELTS, Ngành, Mục tiêu, Quốc gia)"] --> Step1["Bước 1: Chuẩn hóa dữ liệu và Khóa cứng bộ lọc Quốc gia"]
     
     subgraph TANG_1["TẦNG 1: TRƯỜNG ĐẠI HỌC MỤC TIÊU (ƯU TIÊN TUYỂN DỤNG)"]
-        Step1 --> ExtractKWs[Bóc tách từ khóa an toàn: Acronyms & Phrases]
-        ExtractKWs --> SQL_Target[Truy vấn SQL kết hợp Word Boundary Regex + Country Gate]
-        SQL_Target --> TargetList[Danh sách học bổng đúng Trường Mục Tiêu: Chung-Ang, NTUST]
+        Step1 --> ExtractKWs["Bóc tách từ khóa an toàn (Acronyms và Phrases)"]
+        ExtractKWs --> SQL_Target["Truy vấn SQL kết hợp Word Boundary Regex và Country Gate"]
+        SQL_Target --> TargetList["Danh sách học bổng đúng Trường Mục Tiêu (Chung-Ang, NTUST)"]
     end
 
     subgraph TANG_2["TẦNG 2: GỢI Ý CÙNG QUỐC GIA (PHƯƠNG ÁN AN TOÀN)"]
-        Step1 --> SQL_Country[Truy vấn học bổng cùng Quốc gia: Hàn Quốc, Đài Loan]
-        SQL_Country --> SafeList[Danh sách học bổng dự phòng: GIST, UNIST, MOE...]
+        Step1 --> SQL_Country["Truy vấn học bổng cùng Quốc gia (Hàn Quốc, Đài Loan)"]
+        SQL_Country --> SafeList["Danh sách học bổng dự phòng (GIST, UNIST, MOE...)"]
     end
 
-    TargetList --> MergePool[Tổng hợp danh sách sơ tuyển Top candidates]
+    TargetList --> MergePool["Tổng hợp danh sách sơ tuyển Top candidates"]
     SafeList --> MergePool
 
     subgraph AI_RERANK["TẦNG 3: BỘ NÃO DEEP CROSS-ENCODER (MẠNG NƠ-RON AI)"]
-        MergePool --> PromptGen[Tạo cặp văn bản: Candidate Prompt + Full Scholarship Text]
-        PromptGen --> DeepCE[BAAI/bge-reranker-v2-m3 Transformer Cross-Attention]
-        DeepCE --> DynamicProb[Tính xác suất chuẩn xác qua Sigmoid: 0.0% - 100.0%]
+        MergePool --> PromptGen["Tạo cặp văn bản (Candidate Prompt và Full Scholarship Text)"]
+        PromptGen --> DeepCE["BAAI/bge-reranker-v2-m3 Transformer Cross-Attention"]
+        DeepCE --> DynamicProb["Tính xác suất chuẩn xác qua Sigmoid: 0.0% đến 100.0%"]
     end
 
-    DynamicProb --> FinalSort[Sắp xếp bảng xếp hạng: Mục tiêu đứng đầu, An toàn xếp theo điểm AI]
-    FinalSort --> UI([Hiển thị Bảng Xếp Hạng & Lộ Trình Bổ Sung Tiêu Chí Gap Analysis])
+    DynamicProb --> FinalSort["Sắp xếp bảng xếp hạng: Mục tiêu đứng đầu, An toàn xếp theo điểm AI"]
+    FinalSort --> UI["Hiển thị Bảng Xếp Hạng và Lộ Trình Bổ Sung Tiêu Chí Gap Analysis"]
 ```
 
 ---

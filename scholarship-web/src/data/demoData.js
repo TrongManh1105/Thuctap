@@ -5,7 +5,7 @@
  */
 
 export const DEMO_PROFILE = {
-  full_name: "Nguyễn Trọng Mạnh Tiến",
+  full_name: "Nguyễn Trọng Mạnh Tiền",
   target_degree: "Thạc sĩ",
   major: "Trí tuệ Nhân tạo / Khoa học Máy tính",
   gpa: 3.40,

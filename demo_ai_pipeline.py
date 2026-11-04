@@ -17,7 +17,7 @@ print("==================================================================")
 # -------------------------------------------------------------
 # 1. HỒ SƠ ỨNG VIÊN
 # -------------------------------------------------------------
-candidate = "Ứng viên: Nguyễn Trọng Mạnh Tiến | Mục tiêu: Thạc sĩ AI & Khoa học Máy tính tại Thụy Điển | GPA: 2.95/4.0 | IELTS: 6.5"
+candidate = "Ứng viên: Nguyễn Trọng Mạnh Tiền | Mục tiêu: Thạc sĩ AI & Khoa học Máy tính tại Thụy Điển | GPA: 2.95/4.0 | IELTS: 6.5"
 print(f"\n[+] Hồ sơ ứng viên:\n    -> {candidate}\n")
 
 # -------------------------------------------------------------

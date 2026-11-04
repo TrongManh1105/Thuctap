@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
 
-  <script type="module" crossorigin src="/assets/index-BI7Hrvba.js"></script>
+  <script type="module" crossorigin src="/assets/index-BYeXHdn7.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-Bpv-6Rz4.css">
 </head>
 <body>
@@ -83,12 +83,12 @@
       </div>
       <h1 class="hero-title">Khám Phá Học Bổng Du Học Đỉnh Cao Bằng <span class="text-gradient">Trí Tuệ Nhân Tạo</span></h1>
       <p class="hero-desc">
-        Kho dữ liệu <strong>7,944+ học bổng toàn cầu</strong> kết hợp <strong>White-box 5-Factor Reranker</strong> và <strong>pgvector 1536 chiều</strong>. Tra cứu toàn diện kho học bổng thế giới và đối khớp cá nhân hóa đưa ra lộ trình bổ sung tiêu chí chuẩn xác.
+        Kho dữ liệu <strong id="hero-total-scholarships">7,964+ học bổng toàn cầu</strong> kết hợp <strong>White-box 5-Factor Reranker</strong> và <strong>pgvector 1536 chiều</strong>. Tra cứu toàn diện kho học bổng thế giới và đối khớp cá nhân hóa đưa ra lộ trình bổ sung tiêu chí chuẩn xác.
       </p>
 
       <div class="hero-metrics-bar">
         <div class="metric-card">
-          <span class="metric-val" id="metric-total-scholarships">7,944+</span>
+          <span class="metric-val" id="metric-total-scholarships">7,964+</span>
           <span class="metric-lbl">Học bổng Supabase</span>
         </div>
         <div class="metric-divider"></div>
@@ -122,7 +122,7 @@
       <div class="feed-header-wrap">
         <div>
           <h2 class="section-title">Kho Học Bổng Du Học Toàn Cầu</h2>
-          <p class="section-subtitle">Tra cứu tự do toàn bộ 7,944+ học bổng trên thế giới theo quốc gia, mức tài trợ và phân tầng</p>
+          <p class="section-subtitle">Tra cứu tự do toàn bộ <span id="catalog-subtitle-total">7,964+</span> học bổng trên thế giới theo quốc gia, mức tài trợ và phân tầng</p>
         </div>
 
         <div class="feed-stats-badge" id="catalog-results-count">
@@ -287,7 +287,7 @@
             <div class="form-row-3col full-width">
               <div class="form-group">
                 <label for="input-fullname">Họ và Tên Ứng Viên</label>
-                <input type="text" id="input-fullname" class="form-input" placeholder="Ví dụ: Nguyễn Trọng Mạnh Tiến" required />
+                <input type="text" id="input-fullname" class="form-input" placeholder="Ví dụ: Nguyễn Trọng Mạnh Tiền" required />
               </div>
 
               <div class="form-group">
@@ -475,7 +475,7 @@
           <div class="diagnostic-top">
             <div class="diagnostic-avatar">👤</div>
             <div class="diagnostic-meta">
-              <h3 class="diagnostic-title" id="diag-candidate-name">Nguyễn Trọng Mạnh Tiến</h3>
+              <h3 class="diagnostic-title" id="diag-candidate-name">Nguyễn Trọng Mạnh Tiền</h3>
               <p class="diagnostic-sub" id="diag-candidate-stats">Mục tiêu: Thạc sĩ • GPA: 2.45/4.0 • IELTS: 4.5 • Ngành: Trí tuệ Nhân tạo / KHMT</p>
             </div>
             <div class="diagnostic-score-pill" id="diag-readiness-pill">
@@ -534,7 +534,7 @@
       <div class="section-header">
         <div>
           <h2 class="section-title">Trợ Lý AI Tư Vấn Du Học ScholarMatch</h2>
-          <p class="section-subtitle">Trò chuyện ngữ cảnh thông minh, kết nối trực tiếp với 7,944+ học bổng Supabase theo thời gian thực (SSE)</p>
+          <p class="section-subtitle">Trò chuyện ngữ cảnh thông minh, kết nối trực tiếp với <span id="chat-subtitle-total">7,964+</span> học bổng Supabase theo thời gian thực (SSE)</p>
         </div>
         <div class="header-tools">
           <button class="btn btn-outline btn-sm" id="btn-clear-chat" title="Xóa lịch sử trò chuyện">
@@ -549,7 +549,7 @@
         <div class="chat-context-bar" id="chat-context-bar">
           <div class="context-item">
             <span class="context-lbl">Ứng viên:</span>
-            <strong id="chat-context-name">Nguyễn Trọng Mạnh Tiến</strong>
+            <strong id="chat-context-name">Nguyễn Trọng Mạnh Tiền</strong>
           </div>
           <div class="context-item">
             <span class="context-lbl">Bậc học:</span>
@@ -583,7 +583,7 @@
           <div class="chat-bubble chat-assistant">
             <div class="bubble-avatar">🤖</div>
             <div class="bubble-content">
-              <p>Xin chào! Tôi là <strong>Trợ lý AI Cố vấn Du học ScholarMatch</strong>. Tôi được tích hợp mô hình ngôn ngữ lớn (RAG) kết nối trực tiếp với cơ sở dữ liệu hơn <strong>7,944+ học bổng quốc tế</strong> trong Supabase.</p>
+              <p>Xin chào! Tôi là <strong>Trợ lý AI Cố vấn Du học ScholarMatch</strong>. Tôi được tích hợp mô hình ngôn ngữ lớn (RAG) kết nối trực tiếp với cơ sở dữ liệu hơn <strong>7,964+ học bổng quốc tế</strong> trong Supabase.</p>
               <p>Tôi đã nhận diện hồ sơ của bạn (<strong>GPA 2.45</strong>, <strong>IELTS 4.5</strong>, chuyên ngành <strong>Trí tuệ Nhân tạo</strong>, mục tiêu các trường <strong>Hàn Quốc</strong>). Bạn đang quan tâm đến lộ trình nâng chuẩn tiêu chí hay muốn tìm trường phù hợp nhất? Hãy gửi câu hỏi cho tôi nhé!</p>
             </div>
           </div>

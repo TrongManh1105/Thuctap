@@ -1298,7 +1298,7 @@ function renderSelectedTargetUniTags() {
 
 function initFormValues() {
   const p = state.profile;
-  el.formFullName.value = p.full_name || 'Nguyễn Trọng Mạnh Tiến';
+  el.formFullName.value = p.full_name || 'Nguyễn Trọng Mạnh Tiền';
   el.formDegree.value = p.target_degree || 'Thạc sĩ';
   el.formMajor.value = p.major || 'Trí tuệ Nhân tạo / Khoa học Máy tính';
   el.formGpa.value = p.gpa || 2.45;
@@ -2083,12 +2083,12 @@ async function handleCvUpload(file) {
     } catch (err) {
       console.warn('[CV Scanner API Offline] Trích xuất thông tin cơ bản từ hồ sơ:', err);
       // Trích xuất họ tên & chuyên ngành từ CV, KHÔNG tự bịa GPA hay bài báo khoa học
-      let detectedName = 'Nguyễn Trọng Mạnh Tiến';
+      let detectedName = 'Nguyễn Trọng Mạnh Tiền';
       let detectedMajor = 'Trí tuệ Nhân tạo / Khoa học Máy tính';
       
       const cleanName = file.name.replace(/\.pdf$/i, '').replace(/[_-]/g, ' ');
       if (cleanName.toLowerCase().includes('tien') || cleanName.toLowerCase().includes('manh')) {
-        detectedName = 'Nguyễn Trọng Mạnh Tiến';
+        detectedName = 'Nguyễn Trọng Mạnh Tiền';
       }
       if (cleanName.toLowerCase().includes('ai') || cleanName.toLowerCase().includes('cs')) {
         detectedMajor = 'Trí tuệ Nhân tạo / Khoa học Máy tính';
@@ -2172,7 +2172,7 @@ function applyExtractedToForm(extracted, sourceName = 'CV/Resume') {
 function triggerDemoCvScan() {
   runScannerAnimation('CV_NguyenTrongManhTien_AI.pdf', () => {
     const demoCandidate = {
-      full_name: 'Nguyễn Trọng Mạnh Tiến',
+      full_name: 'Nguyễn Trọng Mạnh Tiền',
       major: 'Trí tuệ Nhân tạo / Khoa học Máy tính',
       // Không gán cứng GPA, IELTS hay bài báo - giữ nguyên quyền chọn của người dùng
     };

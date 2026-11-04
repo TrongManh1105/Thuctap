@@ -183,7 +183,7 @@ def recommend_scholarships(profile: Dict[str, Any], top_k: int = 5) -> List[Dict
 
 if __name__ == "__main__":
     profile = {
-        "candidate_name": "Nguyễn Trọng Mạnh Tiến",
+        "candidate_name": "Nguyễn Trọng Mạnh Tiền",
         "degree_target": "Thạc sĩ",
         "gpa": 3.4,                  # Thang 4.0
         "ielts": 6.5,

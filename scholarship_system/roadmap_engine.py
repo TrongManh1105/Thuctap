@@ -105,7 +105,7 @@ if __name__ == "__main__":
     print("=" * 80)
 
     sample_candidate = {
-        "name": "Nguyễn Trọng Mạnh Tiến",
+        "name": "Nguyễn Trọng Mạnh Tiền",
         "gpa": 3.05,
         "ielts": 6.0,
         "work_exp_years": 0.5
