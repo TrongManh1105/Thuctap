@@ -22,6 +22,44 @@ app = Flask(__name__)
 
 SUPABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_URL", "postgresql://postgres.wzsztxegmqeuwgozlggt:Trongmanh1102205@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres")
 
+HF_AI_URL = os.environ.get("HF_AI_URL", "")
+
+def rerank_with_hf_cross_encoder(candidate_summary: str, items: list) -> list:
+    """
+    Nếu biến HF_AI_URL được cấu hình (Hugging Face Spaces), gọi bge-reranker-v2-m3 (Cross-Encoder).
+    Nếu không khả dụng hoặc chưa cấu hình, giữ nguyên điểm White-box đã tính toán an toàn.
+    """
+    if not HF_AI_URL or not items:
+        return items
+    try:
+        import requests
+        req_items = []
+        for it in items:
+            desc = (
+                f"Trường: {it.get('source_name', '')} | Học bổng: {it.get('title', '')} | "
+                f"Quốc gia: {it.get('host_country', '')} | Bậc: {it.get('degree_level', '')} | "
+                f"Ngành: {it.get('major_applied', '')} | Tài trợ: {it.get('funding_details', '')} | "
+                f"Yêu cầu: GPA {it.get('min_gpa', 3.0)}, IELTS {it.get('min_ielts', 6.0)}"
+            )
+            req_items.append({"id": str(it.get("id")), "title": str(it.get("title", "")), "text": desc})
+        
+        resp = requests.post(
+            f"{HF_AI_URL.rstrip('/')}/rerank",
+            json={"query": candidate_summary, "items": req_items},
+            timeout=5
+        )
+        if resp.status_code == 200:
+            data = resp.json().get("results", [])
+            score_map = {r["id"]: r["match_percent"] for r in data if "id" in r}
+            for it in items:
+                s_id = str(it.get("id"))
+                if s_id in score_map:
+                    it["match_percent"] = score_map[s_id]
+                    it["reranker_model"] = "bge-reranker-v2-m3 (Cross-Encoder Hugging Face)"
+    except Exception as e:
+        print(f"[Cross-Encoder] Tạm dùng White-box do HF chưa phản hồi: {e}")
+    return items
+
 def format_deadline(dl_str):
     if not dl_str:
         return "Theo thông báo tuyển sinh chính thức"
@@ -442,9 +480,16 @@ def match_v1_endpoint():
         cur.close()
         conn.close()
         
+        # Áp dụng Cross-Encoder (bge-reranker-v2-m3) từ Hugging Face nếu có kết nối
+        u_str = ', '.join(target_universities) if target_universities else 'Không chọn'
+        c_str = ', '.join(preferred_countries) if preferred_countries else 'Tất cả'
+        cand_summary = f"Ứng viên: {name} | Ngành: {major} | GPA: {gpa}/4.0 | IELTS: {ielts} | Mục tiêu: {u_str} | Quốc gia: {c_str}"
+        target_scholarships = rerank_with_hf_cross_encoder(cand_summary, target_scholarships)
+        alt_scholarships = rerank_with_hf_cross_encoder(cand_summary, alt_scholarships)
+
         # Sắp xếp các trường an toàn theo điểm
         alt_scholarships.sort(key=lambda s: s["match_percent"], reverse=True)
-        # Kết hợp: CÁC TRƯỜNG MỤC TIÊU LUÔN NẰM TRÊN CÙNG ĐẦU BẢNG XẾP HẠNG
+        # Kết hợp: CÁC TRƯỜNG MỤC TIÊU LUÔN NẰM TRÊN CÙNG ĐẦU BẢNG XẾP HẠNG (#1)
         final_scholarships = target_scholarships + alt_scholarships
         
         t_status = "NONE"
