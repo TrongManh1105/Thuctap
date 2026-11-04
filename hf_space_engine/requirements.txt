@@ -1,6 +1,6 @@
-fastapi==0.110.0
-uvicorn==0.28.0
-pydantic==2.6.4
-sentence-transformers==2.5.1
-FlagEmbedding==1.2.10
-torch>=2.0.0 --index-url https://download.pytorch.org/whl/cpu
+gradio>=4.26.0
+fastapi>=0.110.0
+pydantic>=2.6.4
+sentence-transformers>=2.5.1
+FlagEmbedding>=1.2.10
+torch>=2.0.0
