@@ -229,45 +229,85 @@ def get_catalog_v1():
             params.extend([term, term, term, term])
 
         if country and country.lower() != "all":
-            c_clean = country.lower()
-            if c_clean in ["korea", "hàn quốc"]:
-                where_clauses.append("(host_country ILIKE '%Hàn Quốc%' OR host_country ILIKE '%Korea%')")
-            elif c_clean in ["japan", "nhật bản"]:
-                where_clauses.append("(host_country ILIKE '%Nhật Bản%' OR host_country ILIKE '%Japan%')")
-            elif c_clean in ["china", "trung quốc"]:
-                where_clauses.append("(host_country ILIKE '%Trung Quốc%' OR host_country ILIKE '%China%')")
-            elif c_clean in ["usa", "hoa kỳ", "mỹ"]:
-                where_clauses.append("(host_country ILIKE '%Hoa Kỳ%' OR host_country ILIKE '%Mỹ%' OR host_country ILIKE '%USA%' OR host_country ILIKE '%United States%')")
-            elif c_clean in ["uk", "anh", "vương quốc anh"]:
-                where_clauses.append("(host_country ILIKE '%Anh%' OR host_country ILIKE '%UK%' OR host_country ILIKE '%United Kingdom%')")
-            elif c_clean in ["germany", "đức"]:
-                where_clauses.append("(host_country ILIKE '%Đức%' OR host_country ILIKE '%Germany%')")
-            elif c_clean in ["australia", "úc"]:
-                where_clauses.append("(host_country ILIKE '%Úc%' OR host_country ILIKE '%Australia%')")
-            elif c_clean in ["canada"]:
-                where_clauses.append("(host_country ILIKE '%Canada%')")
-            elif c_clean in ["asia", "châu á"]:
-                where_clauses.append("(host_country ILIKE ANY(ARRAY['%Hàn Quốc%', '%Nhật Bản%', '%Trung Quốc%', '%Singapore%', '%Đài Loan%', '%Thái Lan%']))")
-            elif c_clean in ["eu_us", "châu âu & mỹ", "châu âu", "mỹ"]:
-                where_clauses.append("(host_country ILIKE ANY(ARRAY['%Hoa Kỳ%', '%Mỹ%', '%Anh%', '%Đức%', '%Pháp%', '%Hà Lan%', '%Thụy Điển%', '%Thụy Sĩ%', '%Canada%', '%Úc%']))")
+            c_clean = country.lower().strip()
+            if any(k in c_clean for k in ["korea", "hàn quốc"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Hàn Quốc%", "%Korea%"])
+            elif any(k in c_clean for k in ["japan", "nhật bản"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Nhật Bản%", "%Japan%"])
+            elif any(k in c_clean for k in ["china", "trung quốc"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Trung Quốc%", "%China%"])
+            elif any(k in c_clean for k in ["usa", "hoa kỳ", "mỹ"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Hoa Kỳ%", "%Mỹ%", "%USA%", "%United States%"])
+            elif any(k in c_clean for k in ["uk", "anh", "vương quốc anh"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Anh%", "%UK%", "%United Kingdom%"])
+            elif any(k in c_clean for k in ["germany", "đức"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Đức%", "%Germany%"])
+            elif any(k in c_clean for k in ["australia", "úc"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Úc%", "%Australia%"])
+            elif any(k in c_clean for k in ["canada"]):
+                where_clauses.append("host_country ILIKE %s")
+                params.append("%Canada%")
+            elif any(k in c_clean for k in ["pháp", "france"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Pháp%", "%France%"])
+            elif any(k in c_clean for k in ["hà lan", "netherlands"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Hà Lan%", "%Netherlands%"])
+            elif any(k in c_clean for k in ["singapore"]):
+                where_clauses.append("host_country ILIKE %s")
+                params.append("%Singapore%")
+            elif any(k in c_clean for k in ["thụy điển", "sweden"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Thụy Điển%", "%Sweden%"])
+            elif any(k in c_clean for k in ["thụy sĩ", "switzerland"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Thụy Sĩ%", "%Switzerland%"])
+            elif any(k in c_clean for k in ["đài loan", "taiwan"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Đài Loan%", "%Taiwan%"])
+            elif any(k in c_clean for k in ["ý", "italy", "italia"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Ý%", "%Italy%"])
+            elif any(k in c_clean for k in ["asia", "châu á"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Hàn Quốc%", "%Nhật Bản%", "%Trung Quốc%", "%Singapore%", "%Đài Loan%", "%Thái Lan%"])
+            elif any(k in c_clean for k in ["eu_us", "châu âu & mỹ", "châu âu", "châu âu & m"]):
+                where_clauses.append("(host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s OR host_country ILIKE %s)")
+                params.extend(["%Hoa Kỳ%", "%Mỹ%", "%Anh%", "%Đức%", "%Pháp%", "%Hà Lan%", "%Thụy Điển%", "%Canada%"])
             else:
                 where_clauses.append("host_country ILIKE %s")
                 params.append(f"%{country}%")
 
         if funding and funding.lower() != "all":
-            if funding.lower() == "full":
-                where_clauses.append("(funding_type ILIKE '%Toàn phần%' OR funding_type ILIKE '%100%')")
-            elif funding.lower() == "partial":
-                where_clauses.append("(funding_type ILIKE '%Bán phần%' OR funding_type ILIKE '%50%')")
-            elif funding.lower() == "tuition":
-                where_clauses.append("(funding_type ILIKE '%Học phí%' OR funding_type ILIKE '%Tuition%')")
+            f_clean = funding.lower().strip()
+            if any(k in f_clean for k in ["full", "toàn phần", "100"]):
+                where_clauses.append("(funding_type ILIKE %s OR funding_type ILIKE %s OR funding_details ILIKE %s)")
+                params.extend(["%Toàn phần%", "%100%", "%Full%"])
+            elif any(k in f_clean for k in ["partial", "bán phần", "50", "học phí", "tuition"]):
+                where_clauses.append("(funding_type ILIKE %s OR funding_type ILIKE %s OR funding_type ILIKE %s)")
+                params.extend(["%Bán phần%", "%50%", "%Học phí%"])
+            elif any(k in f_clean for k in ["trợ cấp", "sinh hoạt"]):
+                where_clauses.append("(funding_type ILIKE %s OR funding_details ILIKE %s)")
+                params.extend(["%Trợ cấp%", "%sinh hoạt%"])
+            else:
+                where_clauses.append("(funding_type ILIKE %s OR funding_details ILIKE %s)")
+                params.extend([f"%{f_clean}%", f"%{f_clean}%"])
 
         if tier and tier.lower() != "all":
-            if tier.lower() == "a":
-                where_clauses.append("(min_gpa >= 3.2 OR funding_type ILIKE '%Toàn phần%')")
-            elif tier.lower() == "b":
+            t_clean = tier.lower().strip()
+            if "a" in t_clean:
+                where_clauses.append("(min_gpa >= 3.2 OR funding_type ILIKE %s)")
+                params.append("%Toàn phần%")
+            elif "b" in t_clean:
                 where_clauses.append("(min_gpa >= 2.8 AND min_gpa < 3.2)")
-            elif tier.lower() == "c":
+            elif "c" in t_clean:
                 where_clauses.append("(min_gpa < 2.8 OR min_gpa IS NULL)")
 
         where_sql = " AND ".join(where_clauses)
