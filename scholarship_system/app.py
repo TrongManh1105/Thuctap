@@ -24,41 +24,128 @@ SUPABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_URL", 
 
 HF_AI_URL = os.environ.get("HF_AI_URL", "")
 
-def rerank_with_hf_cross_encoder(candidate_summary: str, items: list) -> list:
-    """
-    Nếu biến HF_AI_URL được cấu hình (Hugging Face Spaces), gọi bge-reranker-v2-m3 (Cross-Encoder).
-    Nếu không khả dụng hoặc chưa cấu hình, giữ nguyên điểm White-box đã tính toán an toàn.
-    """
-    if not HF_AI_URL or not items:
-        return items
+# -------------------------------------------------------------------------
+# MÔ HÌNH 1: BGE-M3 (BAAI) 1024-DIM EMBEDDING ENGINE
+# -------------------------------------------------------------------------
+def get_bge_m3_embedding(text: str) -> list:
+    """Tạo vector BGE-M3 (1024 chiều) từ Ollama (local) hoặc HF API"""
+    if not text:
+        return []
+    # 1. Thử gọi Ollama local (http://localhost:11434)
     try:
         import requests
-        req_items = []
-        for it in items:
-            desc = (
-                f"Trường: {it.get('source_name', '')} | Học bổng: {it.get('title', '')} | "
-                f"Quốc gia: {it.get('host_country', '')} | Bậc: {it.get('degree_level', '')} | "
-                f"Ngành: {it.get('major_applied', '')} | Tài trợ: {it.get('funding_details', '')} | "
-                f"Yêu cầu: GPA {it.get('min_gpa', 3.0)}, IELTS {it.get('min_ielts', 6.0)}"
-            )
-            req_items.append({"id": str(it.get("id")), "title": str(it.get("title", "")), "text": desc})
-        
-        resp = requests.post(
-            f"{HF_AI_URL.rstrip('/')}/rerank",
-            json={"query": candidate_summary, "items": req_items},
-            timeout=5
+        res = requests.post(
+            "http://localhost:11434/api/embeddings",
+            json={"model": "bge-m3", "prompt": text},
+            timeout=3
         )
-        if resp.status_code == 200:
-            data = resp.json().get("results", [])
-            score_map = {r["id"]: r["match_percent"] for r in data if "id" in r}
-            for it in items:
-                s_id = str(it.get("id"))
-                if s_id in score_map:
-                    it["match_percent"] = score_map[s_id]
-                    it["reranker_model"] = "bge-reranker-v2-m3 (Cross-Encoder Hugging Face)"
-    except Exception as e:
-        print(f"[Cross-Encoder] Tạm dùng White-box do HF chưa phản hồi: {e}")
+        if res.status_code == 200:
+            vec = res.json().get("embedding", [])
+            if vec:
+                return vec
+    except Exception:
+        pass
+
+    # 2. Thử gọi Hugging Face Space (nếu có cấu hình)
+    if HF_AI_URL:
+        try:
+            import requests
+            res = requests.post(f"{HF_AI_URL.rstrip('/')}/embed", json={"text": text}, timeout=4)
+            if res.status_code == 200:
+                vec = res.json().get("embedding", [])
+                if vec:
+                    return vec
+        except Exception:
+            pass
+
+    return []
+
+# -------------------------------------------------------------------------
+# MÔ HÌNH 2: DEEP CROSS-ENCODER (BAAI/bge-reranker-v2-m3)
+# -------------------------------------------------------------------------
+_local_cross_encoder = None
+
+def get_local_cross_encoder():
+    global _local_cross_encoder
+    if _local_cross_encoder is None:
+        try:
+            from sentence_transformers import CrossEncoder
+            _local_cross_encoder = CrossEncoder("BAAI/bge-reranker-v2-m3")
+            print("[✓] Đã nạp thành công Deep Cross-Encoder (bge-reranker-v2-m3) Local!")
+        except Exception as e:
+            # Nếu môi trường không có sentence-transformers, chuyển sang HF API
+            pass
+    return _local_cross_encoder
+
+def rerank_with_deep_cross_encoder(candidate_summary: str, items: list) -> list:
+    """
+    Chấm điểm tái xếp hạng bằng Deep Cross-Encoder (bge-reranker-v2-m3):
+    - Ưu tiên 1: Chạy trực tiếp qua Local PyTorch / sentence-transformers (Độ trễ thấp, không cần mạng).
+    - Ưu tiên 2: Gọi sang Hugging Face Space (nếu cấu hình HF_AI_URL).
+    - Ưu tiên 3: Dự phòng White-box nếu cả 2 phương án trên chưa sẵn sàng.
+    """
+    if not items:
+        return items
+
+    import math
+
+    # Chuẩn bị danh sách mô tả học bổng
+    doc_pairs = []
+    for it in items:
+        desc = (
+            f"Trường: {it.get('source_name', '')} | Học bổng: {it.get('title', '')} | "
+            f"Quốc gia: {it.get('host_country', '')} | Bậc: {it.get('degree_level', '')} | "
+            f"Ngành: {it.get('major_applied', '')} | Tài trợ: {it.get('funding_details', '')} | "
+            f"Yêu cầu: GPA {it.get('min_gpa', 3.0)}, IELTS {it.get('min_ielts', 6.0)}"
+        )
+        doc_pairs.append((str(it.get("id")), desc))
+
+    # --- CÁCH 1: CHẠY TRỰC TIẾP LOCAL DEEP CROSS-ENCODER ---
+    encoder = get_local_cross_encoder()
+    if encoder is not None:
+        try:
+            pairs = [[candidate_summary, doc] for _, doc in doc_pairs]
+            raw_scores = encoder.predict(pairs)
+            for idx, it in enumerate(items):
+                s = float(raw_scores[idx])
+                prob = 1.0 / (1.0 + math.exp(-s)) if s < 20 else 1.0
+                it["match_percent"] = round(prob * 100.0, 1)
+                it["reranker_model"] = "BAAI/bge-reranker-v2-m3 (Deep Cross-Encoder Local)"
+            return items
+        except Exception as e:
+            print(f"[-] Lỗi local Cross-Encoder: {e}")
+
+    # --- CÁCH 2: GỌI HUGGING FACE SPACES API ---
+    if HF_AI_URL:
+        try:
+            import requests
+            req_items = [{"id": s_id, "text": desc} for s_id, desc in doc_pairs]
+            resp = requests.post(
+                f"{HF_AI_URL.rstrip('/')}/rerank",
+                json={"query": candidate_summary, "items": req_items},
+                timeout=6
+            )
+            if resp.status_code == 200:
+                data = resp.json().get("results", [])
+                score_map = {r["id"]: r["match_percent"] for r in data if "id" in r}
+                for it in items:
+                    s_id = str(it.get("id"))
+                    if s_id in score_map:
+                        it["match_percent"] = score_map[s_id]
+                        it["reranker_model"] = "BAAI/bge-reranker-v2-m3 (Deep Cross-Encoder Hugging Face)"
+                return items
+        except Exception as e:
+            print(f"[-] Lỗi gọi HF Cross-Encoder: {e}")
+
+    # --- CÁCH 3: DỰ PHÒNG WHITE-BOX ---
+    for it in items:
+        if "reranker_model" not in it:
+            it["reranker_model"] = "White-box 5-Factor Academic Reranker (Fallback)"
     return items
+
+# Giữ tương thích ngược
+def rerank_with_hf_cross_encoder(candidate_summary: str, items: list) -> list:
+    return rerank_with_deep_cross_encoder(candidate_summary, items)
 
 def format_deadline(dl_str):
     if not dl_str:

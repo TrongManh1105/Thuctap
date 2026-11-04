@@ -32,8 +32,11 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     OPENROUTER_API_KEY: Optional[str] = None
 
-    # Embedding Dimension (1536-dim cho Supabase pgvector)
-    EMBEDDING_DIM: int = 1536
+    # Embedding Settings (BGE-M3 1024-dim via Ollama / HF)
+    EMBEDDING_MODEL: str = "bge-m3"
+    EMBEDDING_DIM: int = 1024
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    HF_AI_URL: Optional[str] = None
 
     # Retrieval parameters
     RECALL_TOP_K: int = 50

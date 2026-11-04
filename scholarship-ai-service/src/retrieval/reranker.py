@@ -130,6 +130,7 @@ def rerank_scholarships(
         item_enriched = dict(item)
         item_enriched["match_percent"] = match_percent
         item_enriched["tier_group"] = tier_group
+        item_enriched["reranker_engine"] = "White-box 5-Factor Academic Baseline"
         item_enriched["score_breakdown"] = {
             "academic_gpa": round(s_academic, 3),
             "language_score": round(s_lang, 3),
@@ -138,6 +139,35 @@ def rerank_scholarships(
             "vector_similarity": round(s_vector, 3),
         }
         ranked.append(item_enriched)
+
+    # 3. Nâng cấp: Áp dụng Deep Cross-Encoder (BAAI/bge-reranker-v2-m3)
+    try:
+        from sentence_transformers import CrossEncoder
+        import math
+
+        reranker_model = CrossEncoder("BAAI/bge-reranker-v2-m3")
+        cand_summary = f"Ứng viên ngành {candidate_major} | GPA: {candidate_gpa}/4.0 | IELTS: {candidate_ielts}"
+        pairs = []
+        for r in ranked:
+            doc_desc = f"{r.get('source_name', '')} | {r.get('title', '')} | Ngành: {r.get('major_applied', '')} | Yêu cầu: GPA {r.get('min_gpa')}, IELTS {r.get('min_ielts')}"
+            pairs.append([cand_summary, doc_desc])
+
+        cross_scores = reranker_model.predict(pairs)
+        for idx, r in enumerate(ranked):
+            raw_s = float(cross_scores[idx])
+            prob = 1.0 / (1.0 + math.exp(-raw_s)) if raw_s < 20 else 1.0
+            # Kết hợp điểm phân tầng Tier Offset (Hard Gating) với điểm Cross-Encoder
+            if "Group A" in r["tier_group"]:
+                tier_mult = 1.0
+            elif "Group B" in r["tier_group"]:
+                tier_mult = 0.85
+            else:
+                tier_mult = 0.65
+
+            r["match_percent"] = round(prob * 100.0 * tier_mult, 1)
+            r["reranker_engine"] = "BAAI/bge-reranker-v2-m3 (Deep Cross-Encoder Hybrid)"
+    except Exception as exc:
+        logger.info(f"[Deep Cross-Encoder] Sử dụng White-box do: {exc}")
 
     # Sắp xếp theo match_percent giảm dần
     ranked.sort(key=lambda x: x["match_percent"], reverse=True)
