@@ -238,3 +238,4 @@ Quá trình cập nhật dữ liệu của hệ thống hoàn toàn tự động
 1. **Tính kế thừa và phát triển khoa học:** Đề tài đã kế thừa thành công các kiến trúc tiên tiến nhất của dự án Student360 (FastAPI DDD, pgvector, LangGraph, White-box Reranker) và chuyển hóa xuất sắc sang bài toán hỗ trợ du học quốc tế.
 2. **Loại bỏ hoàn toàn hộp đen và ảo tưởng thông tin:** Sự kết hợp giữa **White-box 5-Factor Academic Reranker** và **Google Gemini 2.0 Flash Lite** vừa đảm bảo tính chính xác 100% về mặt toán học, vừa mang lại trải nghiệm tư vấn thông minh, thân thiện và giàu tính nhân văn cho người học.
 3. **Độ sẵn sàng triển khai thực tế (Production-Ready):** Hệ thống không dừng lại ở mức mô hình nghiên cứu lý thuyết mà đã được đóng gói Docker, tự động hóa CI/CD qua GitHub Actions, lưu trữ trên Supabase và vận hành trực tuyến 24/7 trên nền tảng Render.
+
