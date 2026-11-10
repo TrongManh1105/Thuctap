@@ -197,6 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initFormValues();
     attachEventListeners();
     updateChatContextBar();
+    updateCompetencyRadarUI();
   } catch (err) {
     console.error('[ScholarMatch] Error initializing UI:', err);
   }
@@ -696,6 +697,77 @@ function updateSliderBadges() {
     el.badgeIelts.style.color = 'var(--amber)';
     el.badgeIelts.style.background = 'rgba(245, 158, 11, 0.15)';
   }
+
+  updateCompetencyRadarUI();
+}
+
+function updateCompetencyRadarUI() {
+  const gpa = el.formGpa ? parseFloat(el.formGpa.value) || 2.45 : 2.45;
+  const ielts = el.formIelts ? parseFloat(el.formIelts.value) || 4.5 : 4.5;
+  const pubs = el.formPublications ? parseInt(el.formPublications.value, 10) || 0 : 1;
+  const awards = el.formAwards ? parseInt(el.formAwards.value, 10) || 0 : 2;
+  const activeCountries = document.querySelectorAll('.tag-pill.active');
+  const fitRatio = activeCountries.length > 0 ? 0.9 : 0.45;
+
+  const cx = 140, cy = 110, R = 75;
+
+  const r0 = R * (0.2 + 0.8 * Math.max(0, Math.min(1, (gpa - 2.0) / 2.0)));
+  const r1 = R * (0.2 + 0.8 * Math.max(0, Math.min(1, (ielts - 4.0) / 5.0)));
+  const r2 = R * (0.2 + 0.8 * Math.max(0, Math.min(1, pubs / 3.0)));
+  const r3 = R * (0.2 + 0.8 * Math.max(0, Math.min(1, awards / 4.0)));
+  const r4 = R * (0.2 + 0.8 * fitRatio);
+
+  const rad18 = (18 * Math.PI) / 180;
+  const rad54 = (54 * Math.PI) / 180;
+
+  const x0 = cx, y0 = cy - r0;
+  const x1 = cx + r1 * Math.cos(rad18), y1 = cy - r1 * Math.sin(rad18);
+  const x2 = cx + r2 * Math.cos(rad54), y2 = cy + r2 * Math.sin(rad54);
+  const x3 = cx - r3 * Math.cos(rad54), y3 = cy + r3 * Math.sin(rad54);
+  const x4 = cx - r4 * Math.cos(rad18), y4 = cy - r4 * Math.sin(rad18);
+
+  const poly = document.getElementById('radar-candidate-polygon');
+  if (poly) {
+    poly.setAttribute('points', `${x0.toFixed(1)},${y0.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)} ${x3.toFixed(1)},${y3.toFixed(1)} ${x4.toFixed(1)},${y4.toFixed(1)}`);
+  }
+
+  const dot0 = document.getElementById('radar-point-gpa');
+  if (dot0) { dot0.setAttribute('cx', x0.toFixed(1)); dot0.setAttribute('cy', y0.toFixed(1)); }
+  const dot1 = document.getElementById('radar-point-ielts');
+  if (dot1) { dot1.setAttribute('cx', x1.toFixed(1)); dot1.setAttribute('cy', y1.toFixed(1)); }
+  const dot2 = document.getElementById('radar-point-pubs');
+  if (dot2) { dot2.setAttribute('cx', x2.toFixed(1)); dot2.setAttribute('cy', y2.toFixed(1)); }
+  const dot3 = document.getElementById('radar-point-awards');
+  if (dot3) { dot3.setAttribute('cx', x3.toFixed(1)); dot3.setAttribute('cy', y3.toFixed(1)); }
+  const dot4 = document.getElementById('radar-point-fit');
+  if (dot4) { dot4.setAttribute('cx', x4.toFixed(1)); dot4.setAttribute('cy', y4.toFixed(1)); }
+
+  const lblGpa = document.getElementById('radar-lbl-gpa');
+  if (lblGpa) lblGpa.textContent = `GPA (${gpa.toFixed(2)})`;
+  const lblIelts = document.getElementById('radar-lbl-ielts');
+  if (lblIelts) lblIelts.textContent = `IELTS (${ielts.toFixed(1)})`;
+  const lblPubs = document.getElementById('radar-lbl-pubs');
+  if (lblPubs) lblPubs.textContent = `NCKH (${pubs})`;
+  const lblAwards = document.getElementById('radar-lbl-awards');
+  if (lblAwards) lblAwards.textContent = `Giải thưởng (${awards})`;
+
+  const statGpa = document.getElementById('radar-stat-gpa');
+  if (statGpa) statGpa.textContent = gpa.toFixed(2);
+  const statIelts = document.getElementById('radar-stat-ielts');
+  if (statIelts) statIelts.textContent = ielts.toFixed(1);
+  const statPubs = document.getElementById('radar-stat-pubs');
+  if (statPubs) statPubs.textContent = `${pubs} bài`;
+  const statAwards = document.getElementById('radar-stat-awards');
+  if (statAwards) statAwards.textContent = `${awards} giải`;
+
+  const hdrName = document.getElementById('header-student-name');
+  if (hdrName && el.formFullName && el.formFullName.value.trim()) {
+    hdrName.textContent = el.formFullName.value.trim();
+  }
+  const hdrMajor = document.getElementById('header-student-major');
+  if (hdrMajor && el.formMajor && el.formMajor.value.trim()) {
+    hdrMajor.textContent = el.formMajor.value.trim().split('/')[0].trim();
+  }
 }
 
 function updateCountriesCount() {
@@ -716,6 +788,7 @@ function updateCountriesCount() {
     }
   }
   updateChatContextBar();
+  updateCompetencyRadarUI();
 }
 
 
@@ -1380,6 +1453,7 @@ function syncFormToState() {
   };
 
   updateChatContextBar();
+  updateCompetencyRadarUI();
 }
 
 function updateChatContextBar() {

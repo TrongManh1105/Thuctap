@@ -20,8 +20,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
 
-  <script type="module" crossorigin src="/assets/index-BB-Ziw6I.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-DVIHgzHG.css">
+  <script type="module" crossorigin src="/assets/index-CLUrmioe.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-5ObPuMJg.css">
 </head>
 <body>
   <!-- Ambient background glow effects -->
@@ -61,6 +61,15 @@
       </nav>
 
       <div class="header-actions">
+        <!-- Student360 Student Profile Badge -->
+        <div class="student-profile-pill" id="student-profile-pill" title="Hồ sơ sinh viên Student360">
+          <div class="student-avatar-badge">TM</div>
+          <div class="student-info-text">
+            <span class="student-name" id="header-student-name">Nguyễn Trọng Mạnh Tiền</span>
+            <span class="student-meta"><strong id="header-student-id">SV2026-AI</strong> · <span id="header-student-major">AI & KHMT</span></span>
+          </div>
+        </div>
+
         <div class="status-indicator" id="backend-status-pill" title="Trạng thái kết nối Supabase Backend">
           <span class="status-dot"></span>
           <span class="status-text" id="backend-status-text">Đang kiểm tra kết nối...</span>
@@ -72,6 +81,17 @@
       </div>
     </div>
   </header>
+
+  <!-- Student360 Breadcrumb Navigation -->
+  <div class="app-breadcrumb-bar">
+    <div class="breadcrumb-container">
+      <span class="breadcrumb-item">Student360 Platform</span>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-item">Career & Global Mobility</span>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-item active">Trung Tâm Đối Khớp Học Bổng Du Học (ScholarMatch AI)</span>
+    </div>
+  </div>
 
   <!-- Main Content Layout -->
   <main class="main-container">
@@ -300,6 +320,57 @@
               </div>
               <div class="cv-summary-note">
                 👉 <em>Thông tin nền tảng từ CV đã được nạp sang Form bên cạnh. Bạn hãy chủ động kiểm tra và tùy chỉnh các thanh trượt <strong>GPA, IELTS, Quốc gia</strong> và <strong>Trường mục tiêu</strong> trước khi bấm tìm kiếm.</em>
+              </div>
+            </div>
+          </div>
+
+          <!-- Student360 Competency Radar Chart (Hồ sơ năng lực 5 chiều) -->
+          <div class="card-competency-radar-box" id="student360-competency-radar">
+            <div class="radar-box-header">
+              <span class="radar-badge">📊 STUDENT360 COMPETENCY RADAR</span>
+              <span class="radar-live-indicator">● Live 360°</span>
+            </div>
+            <div class="radar-svg-container">
+              <svg id="svg-competency-radar" width="280" height="210" viewBox="0 0 280 210">
+                <!-- Polygons webs -->
+                <polygon class="radar-web" points="140,25 230,85 195,185 85,185 50,85" />
+                <polygon class="radar-web" points="140,55 200,95 175,160 105,160 80,95" />
+                <polygon class="radar-web" points="140,80 170,105 155,140 125,140 110,105" />
+                
+                <!-- Dynamic candidate polygon -->
+                <polygon id="radar-candidate-polygon" class="radar-candidate-poly" points="140,40 210,90 175,165 100,165 65,90" />
+                
+                <!-- Vertices points -->
+                <circle id="radar-point-gpa" class="radar-dot" cx="140" cy="40" r="4" />
+                <circle id="radar-point-ielts" class="radar-dot" cx="210" cy="90" r="4" />
+                <circle id="radar-point-pubs" class="radar-dot" cx="175" cy="165" r="4" />
+                <circle id="radar-point-awards" class="radar-dot" cx="100" cy="165" r="4" />
+                <circle id="radar-point-fit" class="radar-dot" cx="65" cy="90" r="4" />
+                
+                <!-- Metric labels -->
+                <text x="140" y="16" text-anchor="middle" class="radar-lbl" id="radar-lbl-gpa">GPA (2.45)</text>
+                <text x="245" y="90" text-anchor="start" class="radar-lbl" id="radar-lbl-ielts">IELTS (4.5)</text>
+                <text x="205" y="202" text-anchor="middle" class="radar-lbl" id="radar-lbl-pubs">NCKH (1)</text>
+                <text x="75" y="202" text-anchor="middle" class="radar-lbl" id="radar-lbl-awards">Giải thưởng (2)</text>
+                <text x="35" y="90" text-anchor="end" class="radar-lbl" id="radar-lbl-fit">Định hướng (AI)</text>
+              </svg>
+            </div>
+            <div class="radar-footer-stats">
+              <div class="radar-stat-item">
+                <span class="stat-k">GPA</span>
+                <strong class="stat-v" id="radar-stat-gpa">2.45</strong>
+              </div>
+              <div class="radar-stat-item">
+                <span class="stat-k">IELTS</span>
+                <strong class="stat-v" id="radar-stat-ielts">4.5</strong>
+              </div>
+              <div class="radar-stat-item">
+                <span class="stat-k">NCKH</span>
+                <strong class="stat-v" id="radar-stat-pubs">1 bài</strong>
+              </div>
+              <div class="radar-stat-item">
+                <span class="stat-k">Giải thưởng</span>
+                <strong class="stat-v" id="radar-stat-awards">2 giải</strong>
               </div>
             </div>
           </div>
