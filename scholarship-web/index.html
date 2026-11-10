@@ -273,6 +273,34 @@
             </div>
           </div>
 
+          <!-- Candidate Snapshot Summary Card (Bóc tách & Tóm tắt năng lực từ CV) -->
+          <div class="card-cv-summary-box" id="cv-candidate-snapshot" style="display: none;">
+            <div class="cv-summary-header">
+              <span class="cv-summary-badge">⭐ TÓM TẮT NĂNG LỰC TỪ CV</span>
+              <span class="cv-summary-sub" id="cv-snapshot-source">File CV: sample.pdf</span>
+            </div>
+            <div class="cv-summary-body">
+              <div class="cv-summary-profile-line">
+                <span class="cv-avatar-icon">👤</span>
+                <div>
+                  <strong id="cv-snapshot-name">Nguyễn Trọng Mạnh Tiền</strong>
+                  <span class="cv-snapshot-major" id="cv-snapshot-major">Trí tuệ Nhân tạo / Khoa học Máy tính</span>
+                </div>
+              </div>
+              <div class="cv-summary-narrative" id="cv-snapshot-narrative">
+                Ứng viên có nền tảng học thuật về Khoa học Máy tính & AI, định hướng nghiên cứu sâu về Machine Learning và ứng dụng dữ liệu. Đã tham gia các dự án nghiên cứu học thuật tại phòng Lab.
+              </div>
+              <div class="cv-summary-pills" id="cv-snapshot-pills">
+                <span class="cv-pill-tag">🤖 Machine Learning</span>
+                <span class="cv-pill-tag">💻 Python / PyTorch</span>
+                <span class="cv-pill-tag">🔬 Nghiên cứu Học thuật</span>
+              </div>
+              <div class="cv-summary-note">
+                👉 <em>Thông tin nền tảng từ CV đã được nạp sang Form bên cạnh. Bạn hãy chủ động kiểm tra và tùy chỉnh các thanh trượt <strong>GPA, IELTS, Quốc gia</strong> và <strong>Trường mục tiêu</strong> trước khi bấm tìm kiếm.</em>
+              </div>
+            </div>
+          </div>
+
           <div class="scanner-tips-box">
             <span class="tips-icon">💡</span>
             <p><strong>Cơ chế tự động:</strong> Sau khi bóc tách hoặc điều chỉnh thông số, bấm nút bên dưới để nhận bảng phân tích học bổng và lộ trình bổ sung tiêu chí riêng cho bạn.</p>
@@ -598,6 +626,124 @@
       </div>
     </section>
   </main>
+
+  <!-- =========================================================================
+       MODAL 1: XEM CHI TIẾT HỌC BỔNG (DÀNH CHO TAB 1 KHO HỌC BỔNG TOÀN CẦU)
+       Hiển thị 100% thông tin khách quan: Thông tin định danh, Ngành, Quyền lợi, Điều kiện sàn, Checklist, Deadline, Portal
+       ========================================================================= -->
+  <div class="modal-backdrop" id="modal-scholarship-detail" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="detail-modal-title">
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-header">
+        <div>
+          <div class="modal-pills-row">
+            <span class="badge-pill pill-country" id="detail-modal-country">📍 Quốc gia</span>
+            <span class="badge-pill pill-degree" id="detail-modal-degree">🎓 Bậc học</span>
+            <span class="badge-pill pill-funding" id="detail-modal-funding">💰 Mức tài trợ</span>
+            <span class="badge-pill pill-tier" id="detail-modal-tier">🏛️ Học bổng trường</span>
+          </div>
+          <h3 class="modal-title" id="detail-modal-title">Tên Chương Trình Học Bổng</h3>
+          <p class="modal-subtitle" id="detail-modal-institution">🏛️ Cơ quan / Trường đại học cấp học bổng</p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-detail-modal" aria-label="Đóng modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Overview Banner -->
+        <div class="detail-overview-banner">
+          <div class="overview-desc-box">
+            <h4 class="detail-block-title">📋 Thông Tin Định Danh & Mục Tiêu Đào Tạo</h4>
+            <p class="detail-overview-text" id="detail-modal-overview">Mô tả chi tiết về học bổng...</p>
+          </div>
+        </div>
+
+        <!-- 2-column Grid: Quyền Lợi & Điều Kiện Sàn -->
+        <div class="detail-info-grid">
+          <!-- Column 1: Quyền Lợi Tài Trợ -->
+          <div class="detail-info-card card-funding-perks">
+            <div class="card-icon-header">
+              <span class="icon-circle icon-green">💰</span>
+              <h4 class="detail-block-title">Mức Tài Trợ & Quyền Lợi Chi Tiết</h4>
+            </div>
+            <ul class="detail-bullets-list" id="detail-modal-funding-perks">
+              <!-- Rendered via JS -->
+            </ul>
+          </div>
+
+          <!-- Column 2: Điều Kiện Tuyển Sinh Sàn -->
+          <div class="detail-info-card card-admission-reqs">
+            <div class="card-icon-header">
+              <span class="icon-circle icon-blue">📋</span>
+              <h4 class="detail-block-title">Tiêu Chuẩn & Điều Kiện Dự Tuyển (Sàn)</h4>
+            </div>
+            <ul class="detail-bullets-list" id="detail-modal-admission-reqs">
+              <!-- Rendered via JS -->
+            </ul>
+          </div>
+        </div>
+
+        <!-- Chuyên Ngành Tiếp Nhận -->
+        <div class="detail-section-box">
+          <h4 class="detail-block-title">
+            <span>📚 Chuyên Ngành & Khối Ngành Đào Tạo Tiếp Nhận</span>
+          </h4>
+          <div class="majors-tags-list" id="detail-modal-majors">
+            <!-- Tags rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Danh Mục Hồ Sơ Bắt Buộc (Checklist) -->
+        <div class="detail-section-box">
+          <h4 class="detail-block-title">
+            <span>📑 Danh Mục Hồ Sơ Ứng Tuyển Bắt Buộc (Checklist)</span>
+          </h4>
+          <div class="checklist-tags" id="detail-modal-checklist">
+            <!-- Checklist items -->
+          </div>
+        </div>
+
+        <!-- Hạn Chót & Quy Trình Nộp Đơn -->
+        <div class="detail-section-box deadline-section-box">
+          <div class="deadline-row-item">
+            <div class="deadline-meta-left">
+              <span class="deadline-clock-icon">⏰</span>
+              <div>
+                <strong>Hạn Chót Nộp Hồ Sơ:</strong>
+                <span class="deadline-highlight-val" id="detail-modal-deadline">Theo thông báo tuyển sinh</span>
+              </div>
+            </div>
+            <div class="deadline-meta-right">
+              <strong>Hình Thức Nộp Đơn:</strong>
+              <span id="detail-modal-apply-method">Trực tuyến qua Cổng Tuyển Sinh</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Smart Call-to-Action to Tab 2 -->
+        <div class="cta-profile-match-banner">
+          <div class="cta-icon">🎯</div>
+          <div class="cta-text">
+            <strong>Bạn muốn đánh giá xem hồ sơ của mình đạt bao nhiêu % và cần bổ sung gì?</strong>
+            <p>Hệ thống AI sẽ đối khớp các trường năng lực cá nhân của bạn với học bổng này để chẩn đoán khoảng cách tiêu chuẩn (Gap) và đưa ra lộ trình nâng chuẩn cụ thể.</p>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-detail-switch-to-profile">
+            Đánh Giá Gap Cá Nhân
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <a href="#" target="_blank" class="btn btn-primary" id="detail-modal-official-portal" rel="noopener noreferrer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Mở Cổng Tuyển Sinh Chính Thức (Portal)
+        </a>
+        <button class="btn btn-outline" id="btn-detail-ask-ai">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Hỏi AI Về Học Bổng Này
+        </button>
+        <button class="btn btn-secondary" id="btn-close-detail-modal-bottom">Đóng</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: PHÂN TÍCH TIÊU CHUẨN CHI TIẾT & LỘ TRÌNH HÀNH ĐỘNG (GAP ANALYSIS MODAL) -->
   <div class="modal-backdrop" id="modal-gap-analysis" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modal-scholarship-title">

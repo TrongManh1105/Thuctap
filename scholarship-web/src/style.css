@@ -2651,3 +2651,388 @@ select option, .form-select option {
   background: rgba(99, 102, 241, 0.22);
   color: #fff;
 }
+
+/* ==========================================================================
+   TAB 1: CATALOG SCHOLARSHIP CARDS (AUTHENTIC SCHOLARSHIP DATA DISPLAY)
+   No fake candidate match scores or criteria bars
+   ========================================================================== */
+.card-institution-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  color: var(--primary);
+  margin-bottom: 0.45rem;
+  font-weight: 600;
+}
+
+.pill-tier {
+  background: rgba(139, 92, 246, 0.12);
+  color: #A78BFA;
+}
+
+.catalog-req-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  padding: 0.75rem 0.85rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.req-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+}
+
+.req-item.full-col {
+  grid-column: span 2;
+}
+
+.req-icon {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.req-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.req-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.req-val {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.req-val.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.deadline-col {
+  border-top: 1px dashed var(--border-color);
+  padding-top: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.deadline-col .req-val {
+  color: var(--cyan);
+}
+
+.btn-catalog-portal, .btn-card-portal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   MODAL 1: SCHOLARSHIP DOSSIER / FULL DETAIL MODAL (TAB 1)
+   ========================================================================== */
+.modal-dialog-lg {
+  max-width: 820px !important;
+}
+
+.modal-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.detail-overview-banner {
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: var(--radius-md);
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1.3rem;
+}
+
+.detail-block-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detail-overview-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+  margin-bottom: 1.3rem;
+}
+
+@media (max-width: 768px) {
+  .detail-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail-info-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.1rem;
+}
+
+.card-funding-perks {
+  border-left: 3.5px solid var(--emerald);
+}
+
+.card-admission-reqs {
+  border-left: 3.5px solid var(--primary);
+}
+
+.card-icon-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.detail-bullets-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.detail-bullets-list li {
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.detail-bullets-list li strong {
+  color: var(--text-primary);
+}
+
+.detail-bullets-list li::before {
+  content: "•";
+  color: var(--primary);
+  font-weight: bold;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.card-funding-perks .detail-bullets-list li::before {
+  color: var(--emerald);
+}
+
+.detail-section-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.2rem;
+}
+
+.majors-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.major-pill-tag {
+  background: rgba(99, 102, 241, 0.1);
+  color: #c7d2fe;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-xs);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.deadline-section-box {
+  background: rgba(6, 182, 212, 0.06);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.deadline-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.deadline-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.deadline-clock-icon {
+  font-size: 1.3rem;
+}
+
+.deadline-highlight-val {
+  color: var(--cyan);
+  font-weight: 700;
+  margin-left: 0.35rem;
+}
+
+.deadline-meta-right {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+
+.deadline-meta-right strong {
+  color: var(--text-primary);
+}
+
+.cta-profile-match-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(236, 72, 153, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  margin-top: 0.8rem;
+}
+
+.cta-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.cta-text {
+  flex: 1;
+}
+
+.cta-text strong {
+  display: block;
+  font-size: 0.92rem;
+  color: #fff;
+  margin-bottom: 0.25rem;
+}
+
+.cta-text p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   TAB 2: CANDIDATE SNAPSHOT SUMMARY CARD (UNDER CV DROPZONE)
+   ========================================================================== */
+.card-cv-summary-box {
+  background: var(--bg-card);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: var(--radius-md);
+  padding: 1.1rem 1.25rem;
+  margin-top: 1rem;
+  box-shadow: 0 4px 20px -5px rgba(99, 102, 241, 0.15);
+  animation: fadeIn 0.4s ease;
+}
+
+.cv-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cv-summary-badge {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.5px;
+}
+
+.cv-summary-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.cv-summary-profile-line {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.65rem;
+}
+
+.cv-avatar-icon {
+  font-size: 1.35rem;
+}
+
+.cv-summary-profile-line strong {
+  font-size: 1rem;
+  color: var(--text-primary);
+  display: block;
+}
+
+.cv-snapshot-major {
+  font-size: 0.82rem;
+  color: var(--cyan);
+}
+
+.cv-summary-narrative {
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-xs);
+  border-left: 3px solid var(--primary);
+}
+
+.cv-summary-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.cv-pill-tag {
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-xs);
+  font-size: 0.74rem;
+  font-weight: 500;
+}
+
+.cv-summary-note {
+  font-size: 0.78rem;
+  color: var(--amber);
+  line-height: 1.4;
+  border-top: 1px dashed var(--border-color);
+  padding-top: 0.55rem;
+}

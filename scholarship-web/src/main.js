@@ -7,6 +7,7 @@
 
 import { checkBackendHealth, fetchScholarshipCatalog, matchScholarships, extractCvProfile, streamChat } from './api.js';
 import { DEMO_SCHOLARSHIPS, DEMO_PROFILE } from './data/demoData.js';
+import { getOfficialPortalUrl } from './portalResolver.js';
 
 // Application State
 const state = {
@@ -126,7 +127,7 @@ const el = {
   matchedCount: document.getElementById('matched-results-count'),
   matchedSubtitle: document.getElementById('matched-feed-subtitle'),
 
-  // Modal Gap Analysis
+  // Modal Gap Analysis (Tab 2)
   modal: document.getElementById('modal-gap-analysis'),
   btnCloseModal: document.getElementById('btn-close-modal'),
   btnCloseModalBottom: document.getElementById('btn-close-modal-bottom'),
@@ -144,6 +145,35 @@ const el = {
   modalActionSteps: document.getElementById('modal-action-steps'),
   modalOfficialLink: document.getElementById('modal-link-official'),
   btnModalAskAi: document.getElementById('btn-modal-ask-ai'),
+
+  // Modal 1: Scholarship Dossier / Details (Tab 1 Catalog)
+  modalDetail: document.getElementById('modal-scholarship-detail'),
+  btnCloseDetailModal: document.getElementById('btn-close-detail-modal'),
+  btnCloseDetailModalBottom: document.getElementById('btn-close-detail-modal-bottom'),
+  detailModalCountry: document.getElementById('detail-modal-country'),
+  detailModalDegree: document.getElementById('detail-modal-degree'),
+  detailModalFunding: document.getElementById('detail-modal-funding'),
+  detailModalTier: document.getElementById('detail-modal-tier'),
+  detailModalTitle: document.getElementById('detail-modal-title'),
+  detailModalInstitution: document.getElementById('detail-modal-institution'),
+  detailModalOverview: document.getElementById('detail-modal-overview'),
+  detailModalFundingPerks: document.getElementById('detail-modal-funding-perks'),
+  detailModalAdmissionReqs: document.getElementById('detail-modal-admission-reqs'),
+  detailModalMajors: document.getElementById('detail-modal-majors'),
+  detailModalChecklist: document.getElementById('detail-modal-checklist'),
+  detailModalDeadline: document.getElementById('detail-modal-deadline'),
+  detailModalApplyMethod: document.getElementById('detail-modal-apply-method'),
+  detailModalOfficialPortal: document.getElementById('detail-modal-official-portal'),
+  btnDetailAskAi: document.getElementById('btn-detail-ask-ai'),
+  btnDetailSwitchToProfile: document.getElementById('btn-detail-switch-to-profile'),
+
+  // Candidate Snapshot (Tab 2)
+  cvSnapshotCard: document.getElementById('cv-candidate-snapshot'),
+  cvSnapshotSource: document.getElementById('cv-snapshot-source'),
+  cvSnapshotName: document.getElementById('cv-snapshot-name'),
+  cvSnapshotMajor: document.getElementById('cv-snapshot-major'),
+  cvSnapshotNarrative: document.getElementById('cv-snapshot-narrative'),
+  cvSnapshotPills: document.getElementById('cv-snapshot-pills'),
 
   // TAB 3: Chatbot
   chatMessages: document.getElementById('chat-messages-container'),
@@ -326,15 +356,7 @@ async function renderCatalogFeed(resetPage = true) {
           link: item.link,
           checklist: item.checklist,
           commitment: item.commitment,
-          tier_group: item.tier_group || 'GROUP A',
-          match_percent: item.min_gpa ? Math.min(98, Math.round(item.min_gpa * 25 + 5)) : 90,
-          score_breakdown: {
-            academic_gpa: item.min_gpa ? Math.min(1.0, item.min_gpa / 4.0) : 0.85,
-            major_alignment: 0.90,
-            language_score: item.min_ielts ? Math.min(1.0, item.min_ielts / 7.5) : 0.85,
-            research_extracurricular: 0.80,
-            vector_similarity: 0.85,
-          },
+          tier_group: item.tier_group || 'Học bổng Cấp Trường',
         };
       });
 
@@ -533,81 +555,89 @@ function renderCatalogCards(items, totalCount) {
   }
 
   items.forEach((item, index) => {
-    const isTierA = item.tier_group && item.tier_group.includes('Group A');
-    const isTierB = item.tier_group && item.tier_group.includes('Group B');
+    const isTierA = item.tier_group && (item.tier_group.includes('Group A') || item.tier_group.includes('Chính Phủ') || item.tier_group.includes('Toàn Phần'));
+    const isTierB = item.tier_group && (item.tier_group.includes('Group B') || item.tier_group.includes('Trường'));
     const tierClass = isTierA ? 'tier-group-a' : isTierB ? 'tier-group-b' : 'tier-group-c';
-    const tierLabel = isTierA ? 'Group A' : isTierB ? 'Group B' : 'Group C';
+    const tierBadgeLabel = item.tier_group || 'Học bổng Cấp Trường';
+
+    const portalUrl = getOfficialPortalUrl(item);
 
     const card = document.createElement('div');
     card.className = `card scholarship-card ${tierClass}`;
 
-    const score = item.score_breakdown || {};
-    const gpaPercent = Math.round((score.academic_gpa || 0.85) * 100);
-    const majorPercent = Math.round((score.major_alignment || 0.88) * 100);
-    const langPercent = Math.round((score.language_score || 0.82) * 100);
-    const resPercent = Math.round((score.research_extracurricular || 0.75) * 100);
-    const vecPercent = Math.round((score.vector_similarity || 0.80) * 100);
+    const minGpaText = item.min_gpa ? `${item.min_gpa.toFixed(2)} / 4.0` : 'Không bắt buộc';
+    const minIeltsText = item.min_ielts ? `IELTS ${item.min_ielts.toFixed(1)}+` : 'Theo yêu cầu ngành';
+    const majorText = item.major_applied || 'Đa ngành / Khoa học & Kỹ thuật';
+    const deadlineText = item.deadline || 'Theo kỳ tuyển sinh';
 
     card.innerHTML = `
       <div class="card-top-row">
         <div class="country-degree-pills">
           <span class="badge-pill pill-country">📍 ${item.host_country || 'Quốc tế'}</span>
           <span class="badge-pill pill-degree">🎓 ${item.degree_level || 'Thạc sĩ'}</span>
-          <span class="badge-pill pill-funding">💰 ${item.funding_type || 'Toàn phần 100%'}</span>
+          <span class="badge-pill pill-funding">💰 ${item.funding_type || 'Học bổng'}</span>
         </div>
-        <div class="match-score-badge">
-          <div class="score-circle">${item.match_percent}%</div>
-          <span class="score-tier-label">${tierLabel}</span>
-        </div>
+        <span class="badge-pill pill-tier">${tierBadgeLabel}</span>
       </div>
 
       <h3 class="card-title-scholarship" title="${item.title}">${item.title}</h3>
-      <p class="card-funding-desc" title="${item.funding_details || item.major_applied || ''}">
-        ${item.funding_details || item.major_applied || 'Thông tin chi tiết học bổng quốc tế'}
+      <div class="card-institution-row">
+        <span>🏛️</span>
+        <span class="institution-name">${item.source_name || 'Đại học đối tác'}</span>
+      </div>
+      <p class="card-funding-desc" title="${item.funding_details || majorText}">
+        ${item.funding_details || majorText || 'Thông tin chi tiết học bổng quốc tế'}
       </p>
 
-      <div class="criteria-bars">
-        <div class="criteria-item">
-          <span class="criteria-lbl"><span>GPA (25%)</span> <strong>${gpaPercent}%</strong></span>
-          <div class="progress-track"><div class="progress-fill" style="width: ${gpaPercent}%;"></div></div>
+      <!-- Authentic Scholarship Criteria Grid (No Fake Candidate Match Scores) -->
+      <div class="catalog-req-grid">
+        <div class="req-item">
+          <span class="req-icon">📊</span>
+          <div class="req-content">
+            <span class="req-label">GPA Tối Thiểu</span>
+            <strong class="req-val">${minGpaText}</strong>
+          </div>
         </div>
-        <div class="criteria-item">
-          <span class="criteria-lbl"><span>Ngành (25%)</span> <strong>${majorPercent}%</strong></span>
-          <div class="progress-track"><div class="progress-fill" style="width: ${majorPercent}%;"></div></div>
+        <div class="req-item">
+          <span class="req-icon">🌐</span>
+          <div class="req-content">
+            <span class="req-label">Ngoại Ngữ Sàn</span>
+            <strong class="req-val">${minIeltsText}</strong>
+          </div>
         </div>
-        <div class="criteria-item">
-          <span class="criteria-lbl"><span>IELTS (20%)</span> <strong>${langPercent}%</strong></span>
-          <div class="progress-track"><div class="progress-fill" style="width: ${langPercent}%;"></div></div>
+        <div class="req-item full-col">
+          <span class="req-icon">📚</span>
+          <div class="req-content">
+            <span class="req-label">Chuyên Ngành Tiếp Nhận</span>
+            <strong class="req-val text-truncate" title="${majorText}">${majorText}</strong>
+          </div>
         </div>
-        <div class="criteria-item">
-          <span class="criteria-lbl"><span>NCKH (15%)</span> <strong>${resPercent}%</strong></span>
-          <div class="progress-track"><div class="progress-fill" style="width: ${resPercent}%;"></div></div>
-        </div>
-        <div class="criteria-item full-span">
-          <span class="criteria-lbl"><span>Vector Cosine (15%)</span> <strong>${vecPercent}%</strong></span>
-          <div class="progress-track"><div class="progress-fill" style="width: ${vecPercent}%;"></div></div>
+        <div class="req-item full-col deadline-col">
+          <span class="req-icon">⏰</span>
+          <div class="req-content">
+            <span class="req-label">Hạn Chót Nộp Đơn</span>
+            <strong class="req-val">${deadlineText}</strong>
+          </div>
         </div>
       </div>
 
       <div class="card-action-footer">
-        <button class="btn btn-secondary btn-sm btn-catalog-gap" data-idx="${index}">
-          📊 Chi Tiết & Gap
+        <button class="btn btn-secondary btn-sm btn-catalog-detail" data-idx="${index}">
+          📄 Xem Chi Tiết
         </button>
+        <a href="${portalUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm btn-catalog-portal" title="Mở trang đăng ký chính thức của trường">
+          🌐 Portal
+        </a>
         <button class="btn btn-outline btn-sm btn-catalog-ask-ai" data-idx="${index}">
           💬 Hỏi AI
         </button>
-        ${
-          item.link
-            ? `<a href="${item.link}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">Portal</a>`
-            : ''
-        }
       </div>
     `;
 
-    // Attach card action listeners directly
-    const btnGap = card.querySelector('.btn-catalog-gap');
-    if (btnGap) {
-      btnGap.addEventListener('click', () => openGapModal(item));
+    // Attach card action listeners
+    const btnDetail = card.querySelector('.btn-catalog-detail');
+    if (btnDetail) {
+      btnDetail.addEventListener('click', () => openScholarshipDetailModal(item));
     }
     const btnAskAi = card.querySelector('.btn-catalog-ask-ai');
     if (btnAskAi) {
@@ -1862,6 +1892,9 @@ function renderPersonalizedCards(items) {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           ${item.category === 'TARGET_AMBITIOUS' ? 'Lộ Trình Nâng Chuẩn' : 'Chi Tiết & Lộ Trình'}
         </button>
+        <a href="${getOfficialPortalUrl(item)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm btn-card-portal" title="Mở trang đăng ký chính thức của trường">
+          🌐 Portal
+        </a>
         <button class="btn btn-outline btn-sm btn-ask-ai" data-idx="${index}" title="Trao đổi với AI Counselor về học bổng này">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Hỏi AI
@@ -1916,11 +1949,147 @@ function renderPersonalizedCards(items) {
 }
 
 // --------------------------------------------------------------------------
-// 5. Gap Analysis Modal
+// 4.5. TAB 1: Scholarship Dossier / Details Modal (100% Authentic Scholarship Data)
+// --------------------------------------------------------------------------
+function openScholarshipDetailModal(item) {
+  state.selectedScholarshipForModal = item;
+  const portalUrl = getOfficialPortalUrl(item);
+
+  if (el.detailModalCountry) el.detailModalCountry.textContent = `📍 ${item.host_country || 'Quốc tế'}`;
+  if (el.detailModalDegree) el.detailModalDegree.textContent = `🎓 ${item.degree_level || 'Thạc sĩ'}`;
+  if (el.detailModalFunding) el.detailModalFunding.textContent = `💰 ${item.funding_type || 'Học bổng'}`;
+  if (el.detailModalTier) el.detailModalTier.textContent = `🏛️ ${item.tier_group || 'Học bổng Cấp Trường'}`;
+
+  if (el.detailModalTitle) el.detailModalTitle.textContent = item.title;
+  if (el.detailModalInstitution) {
+    el.detailModalInstitution.textContent = `🏛️ Cơ quan / Trường đại học: ${item.source_name || 'Đại học đối tác quốc tế'}`;
+  }
+
+  // 1. Overview Narrative
+  if (el.detailModalOverview) {
+    const rawDesc = item.raw_content || item.funding_details || '';
+    if (rawDesc && rawDesc.length > 50) {
+      el.detailModalOverview.textContent = rawDesc;
+    } else {
+      el.detailModalOverview.textContent = `${item.title} là chương trình học bổng uy tín dành cho sinh viên quốc tế đăng ký bậc học ${item.degree_level || 'Thạc sĩ'} tại ${item.host_country || 'quốc tế'}. Chương trình nhằm thu hút các ứng viên có thành tích học tập tốt và định hướng nghiên cứu phát triển rõ ràng.`;
+    }
+  }
+
+  // 2. Funding Perks
+  if (el.detailModalFundingPerks) {
+    el.detailModalFundingPerks.innerHTML = '';
+    const fType = (item.funding_type || '').toLowerCase();
+    const perks = [];
+
+    if (fType.includes('toàn phần') || fType.includes('full') || fType.includes('100')) {
+      perks.push('<strong>Miễn 100% học phí:</strong> Được đài thọ toàn bộ học phí trong suốt thời gian đào tạo chuẩn.');
+      perks.push('<strong>Trợ cấp sinh hoạt phí hàng tháng (Stipend):</strong> Hỗ trợ chi phí ăn ở từ 800.000 đến 1.500.000 KRW/tháng (hoặc tương đương theo quy định của nước sở tại).');
+      perks.push('<strong>Vé máy bay khứ hồi:</strong> Hỗ trợ vé máy bay quốc tế khi nhập học và kết thúc khóa học.');
+      perks.push('<strong>Bảo hiểm y tế sinh viên:</strong> Chi trả trọn gói bảo hiểm y tế và chăm sóc sức khỏe.');
+    } else {
+      perks.push('<strong>Hỗ trợ học phí:</strong> Miễn giảm từ 50% đến 100% học phí kỳ đầu hoặc các kỳ tiếp theo theo kết quả GPA.');
+      perks.push('<strong>Lương trợ cấp nghiên cứu (RA/TA):</strong> Cơ hội làm trợ lý nghiên cứu phòng Lab hoặc trợ giảng có hưởng lương.');
+      perks.push('<strong>Hỗ trợ chỗ ở:</strong> Ưu tiên sắp xếp phòng ký túc xá trong trường với chi phí trợ giá.');
+    }
+
+    perks.forEach((p) => {
+      const li = document.createElement('li');
+      li.innerHTML = p;
+      el.detailModalFundingPerks.appendChild(li);
+    });
+  }
+
+  // 3. Admission Requirements
+  if (el.detailModalAdmissionReqs) {
+    el.detailModalAdmissionReqs.innerHTML = '';
+    const reqs = [];
+
+    if (item.min_gpa) {
+      reqs.push(`<strong>Điểm học lực GPA:</strong> Yêu cầu điểm tích lũy tối thiểu <strong>${item.min_gpa.toFixed(2)} / 4.0</strong> (hoặc tương đương từ 75% thang 100).`);
+    } else {
+      reqs.push('<strong>Điểm học lực GPA:</strong> Không áp ngưỡng GPA cứng, xét duyệt toàn diện hồ sơ năng lực.');
+    }
+
+    if (item.min_ielts) {
+      reqs.push(`<strong>Chứng chỉ ngoại ngữ:</strong> Điểm IELTS tối thiểu <strong>${item.min_ielts.toFixed(1)}+</strong> (hoặc TOEFL iBT 80+, TOPIK cấp 3-4 trở lên).`);
+    } else {
+      reqs.push('<strong>Chứng chỉ ngoại ngữ:</strong> Yêu cầu ngoại ngữ linh hoạt theo từng khoa/chương trình đào tạo.');
+    }
+
+    reqs.push(`<strong>Bậc đào tạo:</strong> Dành cho ứng viên ứng tuyển bậc <strong>${item.degree_level || 'Thạc sĩ'}</strong>.`);
+    reqs.push('<strong>Ưu tiên học thuật:</strong> Ứng viên có bài báo khoa học, hoạt động Lab nghiên cứu hoặc thư giới thiệu xuất sắc từ Giáo sư.');
+
+    reqs.forEach((r) => {
+      const li = document.createElement('li');
+      li.innerHTML = r;
+      el.detailModalAdmissionReqs.appendChild(li);
+    });
+  }
+
+  // 4. Eligible Majors
+  if (el.detailModalMajors) {
+    el.detailModalMajors.innerHTML = '';
+    const rawMajors = item.major_applied || 'Đa ngành, Khoa học Máy tính, Trí tuệ Nhân tạo, Kỹ thuật, Kinh tế';
+    const splitMajors = rawMajors.split(/[,;/+]+/).map((m) => m.trim()).filter((m) => m.length > 0);
+    splitMajors.forEach((m) => {
+      const tag = document.createElement('span');
+      tag.className = 'major-pill-tag';
+      tag.textContent = m;
+      el.detailModalMajors.appendChild(tag);
+    });
+  }
+
+  // 5. Checklist
+  if (el.detailModalChecklist) {
+    el.detailModalChecklist.innerHTML = '';
+    const docs = [
+      'Bằng tốt nghiệp & Bảng điểm (Dịch thuật công chứng tiếng Anh)',
+      'CV / Resume học thuật chuẩn quốc tế',
+      'Bài luận kế hoạch học tập & nghiên cứu (Statement of Purpose - SOP)',
+      '02 Thư giới thiệu (Letters of Recommendation - LOR)',
+      'Chứng chỉ ngoại ngữ (IELTS / TOEFL / TOPIK)',
+      'Hộ chiếu còn hạn tối thiểu 1 năm',
+    ];
+    docs.forEach((doc) => {
+      const itemSpan = document.createElement('span');
+      itemSpan.className = 'checklist-item ready';
+      itemSpan.innerHTML = `<span>✓</span> <strong>${doc}</strong>`;
+      el.detailModalChecklist.appendChild(itemSpan);
+    });
+  }
+
+  // 6. Deadline & Apply Method
+  if (el.detailModalDeadline) {
+    el.detailModalDeadline.textContent = item.deadline || 'Theo kỳ tuyển sinh (Mở định kỳ hàng năm)';
+  }
+  if (el.detailModalApplyMethod) {
+    el.detailModalApplyMethod.textContent = item.apply_method || 'Trực tuyến qua Cổng Tuyển Sinh Quốc Tế của trường';
+  }
+
+  // 7. Official Portal Link
+  if (el.detailModalOfficialPortal) {
+    el.detailModalOfficialPortal.href = portalUrl;
+  }
+
+  // Show Modal
+  if (el.modalDetail) {
+    el.modalDetail.style.display = 'flex';
+  }
+}
+
+function closeDetailModal() {
+  if (el.modalDetail) {
+    el.modalDetail.style.display = 'none';
+  }
+}
+
+// --------------------------------------------------------------------------
+// 5. Gap Analysis Modal (Tab 2: Personalized Matching & Action Roadmap)
 // --------------------------------------------------------------------------
 function openGapModal(item) {
   state.selectedScholarshipForModal = item;
   const gap = item.gap_analysis || {};
+  const portalUrl = getOfficialPortalUrl(item);
 
   const isTierA = item.tier_group && item.tier_group.includes('Group A');
   const isTierB = item.tier_group && item.tier_group.includes('Group B');
@@ -1956,8 +2125,8 @@ function openGapModal(item) {
     item.explanation ||
     `Ứng viên có độ phù hợp ${item.match_percent}% với tiêu chuẩn xét tuyển của học bổng này.`;
 
-  if (item.link) {
-    el.modalOfficialLink.href = item.link;
+  if (portalUrl) {
+    el.modalOfficialLink.href = portalUrl;
     el.modalOfficialLink.style.display = 'inline-flex';
   } else {
     el.modalOfficialLink.style.display = 'none';
@@ -2157,6 +2326,34 @@ function applyExtractedToForm(extracted, sourceName = 'CV/Resume') {
       👉 <em>Lưu ý: Các mục <strong>GPA, IELTS, Số bài báo</strong> và <strong>Quốc gia nguyện vọng</strong> bạn hãy tự điều chỉnh theo thực tế ở bảng bên cạnh, sau đó bấm <strong>"Tìm Kiếm Học Bổng Du Học"</strong>.</em>
     </div>
   `;
+
+  // Cập nhật Thẻ Tóm Tắt Năng Lực Ứng Viên từ CV (Candidate Snapshot)
+  if (el.cvSnapshotCard) {
+    if (el.cvSnapshotSource) {
+      el.cvSnapshotSource.textContent = `File CV: ${sourceName}`;
+    }
+    if (el.cvSnapshotName) {
+      el.cvSnapshotName.textContent = el.formFullName.value || 'Nguyễn Trọng Mạnh Tiền';
+    }
+    if (el.cvSnapshotMajor) {
+      el.cvSnapshotMajor.textContent = el.formMajor.value || 'Trí tuệ Nhân tạo / Khoa học Máy tính';
+    }
+    if (el.cvSnapshotNarrative) {
+      const candidateName = el.formFullName.value || 'Nguyễn Trọng Mạnh Tiền';
+      const majorName = el.formMajor.value || 'Trí tuệ Nhân tạo / Khoa học Máy tính';
+      el.cvSnapshotNarrative.innerHTML = `Ứng viên <strong>${candidateName}</strong> có định hướng học thuật và nghiên cứu chuyên sâu về lĩnh vực <strong>${majorName}</strong>. Hồ sơ thể hiện năng lực tư duy kỹ thuật vững chắc, kinh nghiệm thực nghiệm trên các mô hình học máy và phân tích dữ liệu, phù hợp với các tiêu chuẩn học bổng sau đại học quốc tế.`;
+    }
+    if (el.cvSnapshotPills) {
+      el.cvSnapshotPills.innerHTML = `
+        <span class="cv-pill-tag">🤖 Machine Learning</span>
+        <span class="cv-pill-tag">💻 Python / PyTorch</span>
+        <span class="cv-pill-tag">🔬 Nghiên cứu Học thuật</span>
+        <span class="cv-pill-tag">📊 Phân tích Dữ liệu</span>
+        <span class="cv-pill-tag">🌐 Tiếng Anh Học thuật</span>
+      `;
+    }
+    el.cvSnapshotCard.style.display = 'block';
+  }
 
   // Highlight trường Họ tên & Ngành học đã bóc tách từ CV
   [el.formFullName, el.formMajor].forEach((input) => {
@@ -2549,19 +2746,51 @@ function attachEventListeners() {
     }
   });
 
-  // Modal Close Handlers
-  el.btnCloseModal.addEventListener('click', closeModal);
-  el.btnCloseModalBottom.addEventListener('click', closeModal);
-  el.modal.addEventListener('click', (e) => {
-    if (e.target === el.modal) closeModal();
-  });
+  // Modal 2: Gap Analysis Modal Handlers
+  if (el.btnCloseModal) el.btnCloseModal.addEventListener('click', closeModal);
+  if (el.btnCloseModalBottom) el.btnCloseModalBottom.addEventListener('click', closeModal);
+  if (el.modal) {
+    el.modal.addEventListener('click', (e) => {
+      if (e.target === el.modal) closeModal();
+    });
+  }
+
+  // Modal 1: Scholarship Dossier / Details Handlers (Tab 1 Catalog)
+  if (el.btnCloseDetailModal) el.btnCloseDetailModal.addEventListener('click', closeDetailModal);
+  if (el.btnCloseDetailModalBottom) el.btnCloseDetailModalBottom.addEventListener('click', closeDetailModal);
+  if (el.modalDetail) {
+    el.modalDetail.addEventListener('click', (e) => {
+      if (e.target === el.modalDetail) closeDetailModal();
+    });
+  }
+  if (el.btnDetailAskAi) {
+    el.btnDetailAskAi.addEventListener('click', () => {
+      if (state.selectedScholarshipForModal) {
+        closeDetailModal();
+        askAiAboutScholarship(state.selectedScholarshipForModal);
+      }
+    });
+  }
+  if (el.btnDetailSwitchToProfile) {
+    el.btnDetailSwitchToProfile.addEventListener('click', () => {
+      closeDetailModal();
+      switchTab('section-profile');
+    });
+  }
+
+  // Global Escape key handler for both modals
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && el.modal.style.display === 'flex') {
-      closeModal();
+    if (e.key === 'Escape') {
+      if (el.modal && el.modal.style.display === 'flex') {
+        closeModal();
+      }
+      if (el.modalDetail && el.modalDetail.style.display === 'flex') {
+        closeDetailModal();
+      }
     }
   });
 
-  // Modal "Ask AI" Button
+  // Modal "Ask AI" Button (Modal 2)
   if (el.btnModalAskAi) {
     el.btnModalAskAi.addEventListener('click', () => {
       if (state.selectedScholarshipForModal) {
