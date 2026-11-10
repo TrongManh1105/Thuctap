@@ -300,8 +300,10 @@ async function renderCatalogFeed(resetPage = true) {
 
   // Map sortMode to backend sort_by parameter
   let sortByParam = 'recent';
-  if (sortMode === 'match_desc' || sortMode === 'gpa_desc') {
+  if (sortMode === 'gpa_desc') {
     sortByParam = 'gpa_desc';
+  } else if (sortMode === 'gpa_asc') {
+    sortByParam = 'gpa_asc';
   } else if (sortMode === 'deadline_asc') {
     sortByParam = 'deadline';
   }
@@ -411,10 +413,12 @@ async function renderCatalogFeed(resetPage = true) {
     return matchQuery && matchCountry && matchFunding && matchTier && matchQuick;
   });
 
-  if (sortMode === 'match_desc') {
-    filtered.sort((a, b) => b.match_percent - a.match_percent);
-  } else if (sortMode === 'deadline_asc') {
+  if (sortMode === 'deadline_asc') {
     filtered.sort((a, b) => new Date(a.deadline || '2099-01-01') - new Date(b.deadline || '2099-01-01'));
+  } else if (sortMode === 'gpa_asc') {
+    filtered.sort((a, b) => (a.min_gpa || 0) - (b.min_gpa || 0));
+  } else if (sortMode === 'gpa_desc') {
+    filtered.sort((a, b) => (b.min_gpa || 0) - (a.min_gpa || 0));
   } else if (sortMode === 'country_asc') {
     filtered.sort((a, b) => (a.host_country || '').localeCompare(b.host_country || ''));
   }

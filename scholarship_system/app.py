@@ -423,6 +423,8 @@ def get_catalog_v1():
             order_sql = "min_gpa ASC NULLS LAST, created_at DESC"
         elif sort_by == "deadline":
             order_sql = "deadline ASC NULLS LAST, created_at DESC"
+        elif sort_by == "country_asc":
+            order_sql = "host_country ASC NULLS LAST, created_at DESC"
 
         conn = get_db_connection()
         if not conn:

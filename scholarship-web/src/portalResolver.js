@@ -28,12 +28,28 @@ export const UNIVERSITY_PORTAL_MAP = {
   'Sungkyunkwan': 'https://www.skku.edu/eng/Admissions/Graduate/Scholarship.do',
   'SKKU': 'https://www.skku.edu/eng/Admissions/Graduate/Scholarship.do',
   'Hanyang': 'https://oia.hanyang.ac.kr/',
+  'Đại học Hanyang': 'https://oia.hanyang.ac.kr/',
   'Kyung Hee': 'https://oia.khu.ac.kr/',
+  'Đại học Kyung Hee': 'https://oia.khu.ac.kr/',
   'POSTECH': 'https://international.postech.ac.kr/',
   'Sogang': 'https://wwwe.sogang.ac.kr/wwwe/admissions_scholarships.do',
+  'Đại học Sogang': 'https://wwwe.sogang.ac.kr/wwwe/admissions_scholarships.do',
   'Ewha': 'https://isa.ewha.ac.kr/',
+  'Đại học Nữ sinh Ewha': 'https://isa.ewha.ac.kr/',
+  'Chonnam': 'https://international.jnu.ac.kr/',
+  'Đại học Quốc gia Chonnam': 'https://international.jnu.ac.kr/',
+  'Kyungpook': 'https://en.knu.ac.kr/admission/scholarships01.htm',
+  'KNU': 'https://en.knu.ac.kr/admission/scholarships01.htm',
+  'Đại học Quốc gia Kyungpook': 'https://en.knu.ac.kr/admission/scholarships01.htm',
+  'Konkuk': 'https://www.konkuk.ac.kr/konkuk/2452/subview.do',
+  'Đại học Konkuk': 'https://www.konkuk.ac.kr/konkuk/2452/subview.do',
+  'Inha': 'https://international.inha.ac.kr/',
+  'Đại học Inha': 'https://international.inha.ac.kr/',
+  'Sejong': 'https://eng.sejong.ac.kr/admissions/scholarships/graduate.do',
+  'Đại học Sejong': 'https://eng.sejong.ac.kr/admissions/scholarships/graduate.do',
   'GKS': 'https://www.studyinkorea.go.kr/ko/scholarship/GksScholarship.do',
   'Global Korea Scholarship': 'https://www.studyinkorea.go.kr/ko/scholarship/GksScholarship.do',
+  'KGSP': 'https://www.studyinkorea.go.kr/ko/scholarship/GksScholarship.do',
   'Study in Korea': 'https://www.studyinkorea.go.kr/ko/scholarship/OtherScholarship.do',
 
   // --- ĐÀI LOAN (TAIWAN) ---
@@ -57,21 +73,33 @@ export const UNIVERSITY_PORTAL_MAP = {
   // --- NHẬT BẢN (JAPAN) ---
   'MEXT': 'https://www.studyinjapan.go.jp/en/planning/scholarship/mext-scholarships/',
   'University of Tokyo': 'https://www.u-tokyo.ac.jp/en/prospective-students/scholarships.html',
+  'Todai': 'https://www.u-tokyo.ac.jp/en/prospective-students/scholarships.html',
   'Tokyo': 'https://www.u-tokyo.ac.jp/en/prospective-students/scholarships.html',
+  'Đại học Tokyo': 'https://www.u-tokyo.ac.jp/en/prospective-students/scholarships.html',
   'Kyoto University': 'https://www.kyoto-u.ac.jp/en/education-campus/tuition-scholarships/scholarships.html',
   'Kyoto': 'https://www.kyoto-u.ac.jp/en/education-campus/tuition-scholarships/scholarships.html',
+  'Đại học Kyoto': 'https://www.kyoto-u.ac.jp/en/education-campus/tuition-scholarships/scholarships.html',
   'Osaka University': 'https://www.osaka-u.ac.jp/en/international/inbound/scholarship',
+  'Đại học Osaka': 'https://www.osaka-u.ac.jp/en/international/inbound/scholarship',
   'Keio University': 'https://www.keio.ac.jp/en/admissions/scholarships/',
   'Keio': 'https://www.keio.ac.jp/en/admissions/scholarships/',
+  'Đại học Keio': 'https://www.keio.ac.jp/en/admissions/scholarships/',
   'Waseda University': 'https://www.waseda.jp/inst/cie/en/life/scholarship',
   'Waseda': 'https://www.waseda.jp/inst/cie/en/life/scholarship',
+  'Đại học Waseda': 'https://www.waseda.jp/inst/cie/en/life/scholarship',
   'Tohoku University': 'https://www.tohoku.ac.jp/en/admissions/financial_aid/',
+  'Đại học Tohoku': 'https://www.tohoku.ac.jp/en/admissions/financial_aid/',
   'Tokyo Institute of Technology': 'https://www.titech.ac.jp/english/admissions/prospective-students/tuition-scholarships',
+  'Tokyo Tech': 'https://www.titech.ac.jp/english/admissions/prospective-students/tuition-scholarships',
+  'Hokkaido University': 'https://www.global.hokudai.ac.jp/admissions/scholarships/',
+  'Kyushu University': 'https://www.kyushu-u.ac.jp/en/admission/fees/scholarship/',
+  'Nagoya University': 'https://en.nagoya-u.ac.jp/admissions/scholarships/',
 
   // --- SINGAPORE ---
   'National University of Singapore': 'https://nus.edu.sg/admissions/scholarships',
   'NUS': 'https://nus.edu.sg/admissions/scholarships',
   'Nanyang Technological University': 'https://www.ntu.edu.sg/admissions/scholarships',
+  'NTU Singapore': 'https://www.ntu.edu.sg/admissions/scholarships',
   'SUTD': 'https://www.sutd.edu.sg/Admissions/Undergraduate/Scholarships',
   'SMU': 'https://admissions.smu.edu.sg/scholarships-financial-aid',
   'SINGA': 'https://www.a-star.edu.sg/Scholarships/for-graduate-studies/singapore-international-graduate-award-singa',
@@ -80,23 +108,31 @@ export const UNIVERSITY_PORTAL_MAP = {
   // --- TRUNG QUỐC (CHINA) ---
   'Tsinghua University': 'https://www.tsinghua.edu.cn/en/Admissions/Scholarships.htm',
   'Tsinghua': 'https://www.tsinghua.edu.cn/en/Admissions/Scholarships.htm',
+  'Đại học Thanh Hoa': 'https://www.tsinghua.edu.cn/en/Admissions/Scholarships.htm',
   'Peking University': 'https://www.isd.pku.edu.cn/scholarships/',
   'Peking': 'https://www.isd.pku.edu.cn/scholarships/',
+  'Đại học Bắc Kinh': 'https://www.isd.pku.edu.cn/scholarships/',
   'Zhejiang University': 'https://iczu.zju.edu.cn/en/',
   'Fudan University': 'https://iso.fudan.edu.cn/en/',
+  'Shanghai Jiao Tong': 'https://isc.sjtu.edu.cn/EN/content.aspx?info_lb=38&flag=2',
   'CSC Scholarship': 'https://www.campuschina.org/',
+  'Chinese Government Scholarship': 'https://www.campuschina.org/',
 
   // --- VƯƠNG QUỐC ANH (UK) ---
   'Chevening': 'https://www.chevening.org/scholarships/',
+  'Học bổng Chevening': 'https://www.chevening.org/scholarships/',
   'University of Oxford': 'https://www.ox.ac.uk/admissions/graduate/fees-and-funding/fees-funding-and-scholarship-search',
   'Oxford': 'https://www.ox.ac.uk/admissions/graduate/fees-and-funding/fees-funding-and-scholarship-search',
+  'Đại học Oxford': 'https://www.ox.ac.uk/admissions/graduate/fees-and-funding/fees-funding-and-scholarship-search',
   'University of Cambridge': 'https://www.cambridgetrust.org/scholarships/',
   'Cambridge': 'https://www.cambridgetrust.org/scholarships/',
+  'Đại học Cambridge': 'https://www.cambridgetrust.org/scholarships/',
   'Imperial College London': 'https://www.imperial.ac.uk/study/fees-and-funding/',
   'Imperial': 'https://www.imperial.ac.uk/study/fees-and-funding/',
   'UCL': 'https://www.ucl.ac.uk/scholarships/',
   "King's College London": 'https://www.kcl.ac.uk/study/funding',
   'Edinburgh': 'https://www.ed.ac.uk/student-funding',
+  'University of Edinburgh': 'https://www.ed.ac.uk/student-funding',
   'Manchester': 'https://www.manchester.ac.uk/study/international/finance-and-travel/funding/',
   'Warwick': 'https://warwick.ac.uk/services/academicoffice/gsp/funding/',
   'Bristol': 'https://www.bristol.ac.uk/fees-funding/',
@@ -108,53 +144,82 @@ export const UNIVERSITY_PORTAL_MAP = {
 
   // --- HOA KỲ (USA) ---
   'Fulbright': 'https://vn.usembassy.gov/education-culture/fulbright-program-vietnam/',
+  'Học bổng Fulbright': 'https://vn.usembassy.gov/education-culture/fulbright-program-vietnam/',
   'Carnegie Mellon': 'https://www.cmu.edu/student-financial-services/financial-aid/scholarships/',
   'Duke University': 'https://financialaid.duke.edu/types-aid/scholarships',
   'Duke': 'https://financialaid.duke.edu/types-aid/scholarships',
   'Johns Hopkins': 'https://finaid.jhu.edu/undergraduate-aid/types-of-aid/scholarships-grants/',
   'Harvard': 'https://college.harvard.edu/financial-aid/types-aid/scholarships-grants',
+  'Đại học Harvard': 'https://college.harvard.edu/financial-aid/types-aid/scholarships-grants',
   'MIT': 'https://sfs.mit.edu/undergraduate-students/types-of-aid/mit-scholarship/',
+  'Viện Công nghệ MIT': 'https://sfs.mit.edu/undergraduate-students/types-of-aid/mit-scholarship/',
   'Stanford': 'https://financialaid.stanford.edu/undergrad/how/index.html',
+  'Đại học Stanford': 'https://financialaid.stanford.edu/undergrad/how/index.html',
   'UC Berkeley': 'https://financialaid.berkeley.edu/types-of-aid-at-berkeley/scholarships/',
   'Columbia University': 'https://cc-seas.financialaid.columbia.edu/types-of-aid/scholarships',
   'Yale University': 'https://finaid.yale.edu/',
   'Princeton University': 'https://finaid.princeton.edu/',
   'UCLA': 'https://financialaid.ucla.edu/',
   'University of Michigan': 'https://finaid.umich.edu/',
+  'University of Washington': 'https://www.washington.edu/financialaid/types-of-aid/scholarships/',
+  'Georgia Tech': 'https://finaid.gatech.edu/',
+  'UIUC': 'https://osfa.illinois.edu/',
 
   // --- CHÂU ÂU (EUROPE) ---
   'DAAD': 'https://www.daad.de/en/study-and-research-in-germany/scholarships/',
+  'Học bổng DAAD': 'https://www.daad.de/en/study-and-research-in-germany/scholarships/',
   'Eiffel': 'https://www.campusfrance.org/en/eiffel-scholarship-program-of-excellence',
+  'Học bổng Eiffel': 'https://www.campusfrance.org/en/eiffel-scholarship-program-of-excellence',
+  'Erasmus': 'https://www.eacea.ec.europa.eu/scholarships/erasmus-mundus-catalogue_en',
+  'Erasmus Mundus': 'https://www.eacea.ec.europa.eu/scholarships/erasmus-mundus-catalogue_en',
   'ETH Zurich': 'https://ethz.ch/en/studies/financial/scholarships.html',
   'EPFL': 'https://www.epfl.ch/education/studies/en/financing-study/grants/',
   'TU Munich': 'https://www.tum.de/en/studies/fees-and-financial-aid/scholarships',
+  'TUM': 'https://www.tum.de/en/studies/fees-and-financial-aid/scholarships',
   'RWTH Aachen': 'https://www.rwth-aachen.de/cms/root/studium/im-studium/stipendien-foerderung/~bfw/stipendien/?lidx=1',
   'TU Delft': 'https://www.tudelft.nl/en/education/practical-matters/scholarships',
   'University of Amsterdam': 'https://www.uva.nl/en/education/master-s/scholarships--tuition/scholarships-and-loans/scholarships.html',
+  'UvA': 'https://www.uva.nl/en/education/master-s/scholarships--tuition/scholarships-and-loans/scholarships.html',
   'Wageningen': 'https://www.wur.nl/en/education-programmes/master/practical-information-masters/scholarships-grants.htm',
   'Lund': 'https://www.lunduniversity.lu.se/admissions/scholarships-and-awards',
+  'Lund University': 'https://www.lunduniversity.lu.se/admissions/scholarships-and-awards',
   'KTH': 'https://www.kth.se/en/studies/master/scholarships',
   'Karolinska': 'https://education.ki.se/scholarships',
   'Uppsala': 'https://www.uu.se/en/admissions/scholarships',
+  'Uppsala University': 'https://www.uu.se/en/admissions/scholarships',
   'Chalmers': 'https://www.chalmers.se/en/education/admissions/scholarships/',
+  'Chalmers University': 'https://www.chalmers.se/en/education/admissions/scholarships/',
+  'Gothenburg': 'https://www.gu.se/en/study-in-gothenburg/apply/scholarships',
+  'University of Gothenburg': 'https://www.gu.se/en/study-in-gothenburg/apply/scholarships',
   'Politecnico di Milano': 'https://www.polimi.it/en/international-prospective-students/laurea-magistrale-programmes-equivalent-to-master-of-science/scholarships',
   'Grenoble Alpes': 'https://www.univ-grenoble-alpes.fr/english/study/funding-your-studies/scholarships/',
+  'Sorbonne': 'https://www.sorbonne-universite.fr/en/education/international-students',
 
-  // --- ÚC & CANADA & KHÁC ---
+  // --- ÚC & CANADA ---
   'Australia Awards': 'https://www.dfat.gov.au/people-to-people/australia-awards',
+  'Học bổng Australia Awards': 'https://www.dfat.gov.au/people-to-people/australia-awards',
   'University of Melbourne': 'https://scholarships.unimelb.edu.au/',
+  'Melbourne': 'https://scholarships.unimelb.edu.au/',
   'University of Sydney': 'https://www.sydney.edu.au/scholarships/',
+  'Sydney': 'https://www.sydney.edu.au/scholarships/',
   'UNSW Sydney': 'https://www.scholarships.unsw.edu.au/',
+  'UNSW': 'https://www.scholarships.unsw.edu.au/',
   'Adelaide': 'https://international.adelaide.edu.au/admissions/scholarships',
+  'University of Adelaide': 'https://international.adelaide.edu.au/admissions/scholarships',
   'University of Toronto': 'https://www.future.utoronto.ca/finances/scholarships',
+  'Toronto': 'https://www.future.utoronto.ca/finances/scholarships',
   'McGill University': 'https://www.mcgill.ca/studentaid/scholarships-aid',
+  'McGill': 'https://www.mcgill.ca/studentaid/scholarships-aid',
   'UBC': 'https://you.ubc.ca/financial-planning/scholarships-awards-international-students/',
+  'University of British Columbia': 'https://you.ubc.ca/financial-planning/scholarships-awards-international-students/',
   'Vanier Canada': 'https://vanier.gc.ca/en/home-accueil.html',
+  'Vanier': 'https://vanier.gc.ca/en/home-accueil.html',
 };
 
 /**
  * Returns a guaranteed official portal URL for a given scholarship item.
- * Never returns a Google Search URL.
+ * Prioritizes authentic, specific application/scholarship links.
+ * Never returns a Google Search URL or generic dead link.
  */
 export function getOfficialPortalUrl(item) {
   if (!item) return 'https://www.studyinkorea.go.kr/';
@@ -162,9 +227,38 @@ export function getOfficialPortalUrl(item) {
   const rawLink = (item.link || '').trim();
   const title = (item.title || '').trim();
   const source = (item.source_name || '').trim();
-  const textToScan = `${title} ${source} ${rawLink}`;
+  const textToScan = `${title} ${source}`;
 
-  // 1. Check exact or substring matches in UNIVERSITY_PORTAL_MAP
+  // 1. If item.link is already a specific authentic URL (e.g. contains /scholarship, /admissions, /apply, .edu, .ac, .gov, .org)
+  // and is not a google search URL or empty, prioritize it!
+  if (
+    rawLink &&
+    rawLink.startsWith('http') &&
+    !rawLink.includes('google.com/search') &&
+    !rawLink.includes('localhost') &&
+    rawLink !== 'about:blank'
+  ) {
+    const isSpecificLink =
+      rawLink.includes('/scholarship') ||
+      rawLink.includes('/admission') ||
+      rawLink.includes('/apply') ||
+      rawLink.includes('/intl') ||
+      rawLink.includes('/iadm') ||
+      rawLink.includes('/postgraduate') ||
+      rawLink.includes('chevening.org') ||
+      rawLink.includes('studyinkorea.go.kr') ||
+      rawLink.includes('daad.de') ||
+      rawLink.includes('campusfrance.org') ||
+      rawLink.includes('a-star.edu.sg') ||
+      rawLink.includes('dfat.gov.au') ||
+      rawLink.includes('taiwanscholarship.moe.gov.tw');
+
+    if (isSpecificLink) {
+      return rawLink;
+    }
+  }
+
+  // 2. Check exact or substring matches in UNIVERSITY_PORTAL_MAP
   for (const [key, portalUrl] of Object.entries(UNIVERSITY_PORTAL_MAP)) {
     const regex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
     if (regex.test(textToScan) || textToScan.toLowerCase().includes(key.toLowerCase())) {
@@ -172,12 +266,12 @@ export function getOfficialPortalUrl(item) {
     }
   }
 
-  // 2. If it's a valid direct HTTP link and NOT a google search link, keep it!
-  if (rawLink && rawLink.startsWith('http') && !rawLink.includes('google.com/search')) {
+  // 3. If rawLink is a valid HTTP link (even homepage of the university), use it
+  if (rawLink && rawLink.startsWith('http') && !rawLink.includes('google.com/search') && !rawLink.includes('localhost')) {
     return rawLink;
   }
 
-  // 3. Fallback based on host country
+  // 4. Country fallback official study/scholarship portal
   const country = (item.host_country || '').toLowerCase();
   if (country.includes('hàn') || country.includes('korea')) {
     return 'https://www.studyinkorea.go.kr/ko/scholarship/GksScholarship.do';
@@ -206,11 +300,26 @@ export function getOfficialPortalUrl(item) {
   if (country.includes('úc') || country.includes('australia')) {
     return 'https://www.dfat.gov.au/people-to-people/australia-awards';
   }
+  if (country.includes('canada')) {
+    return 'https://www.educanada.ca/scholarships-bourses/';
+  }
   if (country.includes('thụy sĩ') || country.includes('switzerland')) {
     return 'https://www.sbfi.admin.ch/sbfi/en/home/education/scholarships-and-grants/swiss-government-excellence-scholarships.html';
   }
   if (country.includes('thụy điển') || country.includes('sweden')) {
     return 'https://si.se/en/apply/scholarships/';
+  }
+  if (country.includes('hà lan') || country.includes('netherlands')) {
+    return 'https://www.studyinnl.org/finances';
+  }
+  if (country.includes('ý') || country.includes('italy')) {
+    return 'https://studyinitaly.esteri.it/';
+  }
+  if (country.includes('phần lan') || country.includes('finland')) {
+    return 'https://www.studyinfinland.fi/scholarships';
+  }
+  if (country.includes('trung quốc') || country.includes('china')) {
+    return 'https://www.campuschina.org/';
   }
 
   return 'https://www.scholars4dev.com/';
