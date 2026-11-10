@@ -20,8 +20,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
 
-  <script type="module" crossorigin src="/assets/index-CLUrmioe.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-5ObPuMJg.css">
+  <script type="module" crossorigin src="/assets/index-BsFh6lxU.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-gYaTzYsJ.css">
 </head>
 <body>
   <!-- Ambient background glow effects -->
@@ -29,69 +29,353 @@
   <div class="ambient-glow glow-2"></div>
   <div class="ambient-glow glow-3"></div>
 
-  <!-- Top Navigation Bar -->
-  <header class="app-header">
-    <div class="header-container">
-      <div class="brand-logo" id="brand-logo" role="button" tabindex="0" title="ScholarMatch AI Homepage">
-        <div class="logo-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+  <!-- Student360 Official Top Header (80px height) -->
+  <header class="s360-header" id="app-header">
+    <div class="s360-header-left">
+      <!-- Mobile/Desktop Sidebar Hamburger Toggle -->
+      <button class="s360-btn-icon s360-sidebar-toggle-btn" id="btn-sidebar-toggle" title="Thu gọn / Mở rộng Sidebar" aria-label="Menu">
+        <svg class="icon-menu" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+
+      <!-- Student360 CMC University Brand -->
+      <div class="s360-brand-box" id="brand-logo" role="button" tabindex="0" title="Student360 - Trang chủ">
+        <div class="s360-logo-wrapper">
+          <img src="/images/CMC_logo_ver01.png" alt="CMC University Logo" class="s360-logo-img" />
+        </div>
+        <div class="s360-brand-text">
+          <div class="s360-title-row">
+            <span class="s360-brand-name">STUDENT 360</span>
+            <span class="badge-ai-pill">AI MATCH</span>
+          </div>
+          <span class="s360-brand-subtitle">HỆ THỐNG HỖ TRỢ SINH VIÊN TOÀN DIỆN</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle / Global Search or Feature Badge -->
+    <div class="s360-header-center">
+      <div class="s360-header-badge">
+        <span class="pulse-dot-green"></span>
+        <span>Phân hệ <strong>Học Bổng & Đối Khớp Du Học AI</strong> (Supabase 7,996+)</span>
+      </div>
+    </div>
+
+    <!-- Right Actions -->
+    <div class="s360-header-right">
+      <!-- System Features Grid Icon -->
+      <button class="s360-btn-icon" id="btn-system-features" title="Chức năng hệ thống" aria-label="Chức năng hệ thống">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+      </button>
+
+      <!-- Notification Bell with Ping -->
+      <button class="s360-btn-icon s360-notif-btn" id="btn-notifications" title="Thông báo học bổng mới" aria-label="Thông báo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="s360-notif-badge">3</span>
+      </button>
+
+      <!-- Role Switcher Pill -->
+      <div class="s360-role-pill" id="badge-user-role" title="Vai trò hiện tại trong hệ thống">
+        <div class="s360-role-icon-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
             <path d="M6 12v5c3 3 9 3 12 0v-5"/>
           </svg>
         </div>
-        <div class="brand-text">
-          <span class="brand-title">ScholarMatch <span class="badge-ai">AI</span></span>
-          <span class="brand-subtitle">Study Abroad Intelligence Platform</span>
+        <div class="s360-role-text">
+          <span class="s360-role-label">Vai trò</span>
+          <span class="s360-role-name">Sinh viên</span>
         </div>
+        <svg class="s360-role-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
       </div>
 
-      <nav class="nav-links" aria-label="Main Navigation">
-        <button class="nav-tab active" id="tab-nav-catalog" data-target="section-catalog">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
-          Kho Học Bổng Toàn Cầu
-        </button>
-        <button class="nav-tab" id="tab-nav-profile" data-target="section-profile">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Hồ Sơ & Gợi Ý Cá Nhân
-        </button>
-        <button class="nav-tab" id="tab-nav-chat" data-target="section-chat">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          Trợ Lý AI Du Học
-        </button>
-      </nav>
-
-      <div class="header-actions">
-        <!-- Student360 Student Profile Badge -->
-        <div class="student-profile-pill" id="student-profile-pill" title="Hồ sơ sinh viên Student360">
-          <div class="student-avatar-badge">TM</div>
-          <div class="student-info-text">
-            <span class="student-name" id="header-student-name">Nguyễn Trọng Mạnh Tiền</span>
-            <span class="student-meta"><strong id="header-student-id">SV2026-AI</strong> · <span id="header-student-major">AI & KHMT</span></span>
-          </div>
+      <!-- Student Profile Pill (Student360 style) -->
+      <div class="s360-profile-pill" id="student-profile-pill" title="Hồ sơ tài khoản sinh viên">
+        <div class="s360-avatar-badge">TM</div>
+        <div class="s360-profile-info">
+          <span class="s360-student-name" id="header-student-name">Nguyễn Trọng Mạnh Tiền</span>
+          <span class="s360-student-meta"><strong id="header-student-id">SV2026-AI</strong> · <span id="header-student-major">AI & KHMT</span></span>
         </div>
+        <svg class="s360-profile-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
 
-        <div class="status-indicator" id="backend-status-pill" title="Trạng thái kết nối Supabase Backend">
-          <span class="status-dot"></span>
-          <span class="status-text" id="backend-status-text">Đang kiểm tra kết nối...</span>
-        </div>
-        <button class="btn-icon theme-toggle" id="btn-theme-toggle" title="Đổi giao diện Sáng / Tối" aria-label="Chuyển đổi chủ đề">
-          <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
+      <!-- Theme Mode Toggle -->
+      <button class="s360-btn-icon theme-toggle" id="btn-theme-toggle" title="Đổi giao diện Sáng / Tối" aria-label="Chuyển đổi giao diện">
+        <svg class="icon-sun" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <svg class="icon-moon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+
+      <!-- Backend Status -->
+      <div class="status-indicator" id="backend-status-pill" title="Trạng thái kết nối Supabase Backend">
+        <span class="status-dot"></span>
+        <span class="status-text" id="backend-status-text">Đang kiểm tra kết nối...</span>
       </div>
     </div>
   </header>
 
-  <!-- Student360 Breadcrumb Navigation -->
-  <div class="app-breadcrumb-bar">
-    <div class="breadcrumb-container">
-      <span class="breadcrumb-item">Student360 Platform</span>
-      <span class="breadcrumb-separator">/</span>
-      <span class="breadcrumb-item">Career & Global Mobility</span>
-      <span class="breadcrumb-separator">/</span>
-      <span class="breadcrumb-item active">Trung Tâm Đối Khớp Học Bổng Du Học (ScholarMatch AI)</span>
+  <!-- Sidebar Backdrop (Mobile) -->
+  <div class="s360-sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- Student360 Left Sidebar (288px width, collapsible to 80px) -->
+  <aside class="s360-sidebar" id="app-sidebar" aria-label="Thanh điều hướng Student360">
+    <!-- Sidebar Search -->
+    <div class="s360-sidebar-search">
+      <div class="s360-search-wrapper">
+        <svg class="s360-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="sidebar-search-input" class="s360-sidebar-input" placeholder="Tìm kiếm menu..." />
+      </div>
     </div>
-  </div>
+
+    <!-- Navigation Menu Items -->
+    <nav class="s360-sidebar-nav" id="sidebar-nav-container">
+      <!-- 1. Dashboard -->
+      <button type="button" class="s360-nav-btn s360-btn-dashboard" data-menu="dashboard" title="Dashboard">
+        <svg class="s360-item-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="9"></rect>
+          <rect x="14" y="3" width="7" height="5"></rect>
+          <rect x="14" y="12" width="7" height="9"></rect>
+          <rect x="3" y="16" width="7" height="5"></rect>
+        </svg>
+        <span class="s360-item-label">Dashboard</span>
+      </button>
+
+      <!-- 2. Menu Group: Học tập của tôi -->
+      <div class="s360-nav-group" data-group="hoc-tap-cua-toi">
+        <button type="button" class="s360-group-toggle" title="Học tập của tôi">
+          <svg class="s360-group-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10z"></path>
+            <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          <span class="s360-group-label">HỌC TẬP CỦA TÔI</span>
+          <svg class="s360-group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="s360-group-items">
+          <button type="button" class="s360-subnav-btn" data-menu="ket-qua" title="Kết quả học tập">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+            <span class="s360-item-label">Kết quả học tập</span>
+          </button>
+          <button type="button" class="s360-subnav-btn" data-menu="thoi-khoa-bieu" title="Thời khóa biểu">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span class="s360-item-label">Thời khóa biểu</span>
+          </button>
+          <button type="button" class="s360-subnav-btn" data-menu="diem-ren-luyen" title="Rèn luyện & Quyết định">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="7"></circle>
+              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+            </svg>
+            <span class="s360-item-label">Rèn luyện & Quyết định</span>
+          </button>
+          <button type="button" class="s360-subnav-btn" data-menu="chuong-trinh-hoc" title="Chương trình học">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            </svg>
+            <span class="s360-item-label">Chương trình học</span>
+          </button>
+          <button type="button" class="s360-subnav-btn" data-menu="thi-cu" title="Thi cử">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <span class="s360-item-label">Thi cử</span>
+          </button>
+          <button type="button" class="s360-subnav-btn" data-menu="dang-ky-truc-tuyen" title="Đăng ký trực tuyến">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 11 12 14 22 4"></polyline>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+            <span class="s360-item-label">Đăng ký trực tuyến</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Menu Group: Tài chính học vụ (ACTIVE GROUP) -->
+      <div class="s360-nav-group expanded" data-group="tai-chinh-hoc-vu">
+        <button type="button" class="s360-group-toggle group-active" title="Tài chính học vụ">
+          <svg class="s360-group-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
+          </svg>
+          <span class="s360-group-label">TÀI CHÍNH HỌC VỤ</span>
+          <svg class="s360-group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="s360-group-items">
+          <button type="button" class="s360-subnav-btn" data-menu="hoc-phi" title="Học phí và công nợ">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"></path>
+              <line x1="8" y1="8" x2="16" y2="8"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            <span class="s360-item-label">Học phí & Công nợ</span>
+          </button>
+          <!-- ACTIVE ITEM: Học bổng & Đối khớp AI -->
+          <button type="button" class="s360-subnav-btn active" data-menu="hoc-bong" title="Học bổng & Đối khớp AI">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="7"></circle>
+              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+            </svg>
+            <span class="s360-item-label">Học bổng & Đối khớp AI</span>
+            <span class="s360-active-dot" title="Đang mở"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. Menu Group: Cổng TT Việc làm & Du học -->
+      <div class="s360-nav-group" data-group="career-hub">
+        <button type="button" class="s360-group-toggle" title="Cổng TT Việc làm & Du học">
+          <svg class="s360-group-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          <span class="s360-group-label">CỔNG VIỆC LÀM & DU HỌC</span>
+          <svg class="s360-group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="s360-group-items">
+          <button type="button" class="s360-subnav-btn" data-menu="viec-lam" title="Hướng nghiệp & Việc làm">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+            </svg>
+            <span class="s360-item-label">Hướng nghiệp & Việc làm</span>
+          </button>
+          <button type="button" class="s360-subnav-btn" data-menu="trao-doi" title="Cơ hội du học & Trao đổi">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M2 12h20"></path>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span class="s360-item-label">Cơ hội trao đổi sinh viên</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 5. Menu Group: Cổng Đào tạo -->
+      <div class="s360-nav-group" data-group="daotao">
+        <button type="button" class="s360-group-toggle" title="Cổng Đào tạo">
+          <svg class="s360-group-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+          <span class="s360-group-label">CỔNG ĐÀO TẠO</span>
+          <svg class="s360-group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="s360-group-items">
+          <button type="button" class="s360-subnav-btn" data-menu="thong-tin-sv" title="Thông tin sinh viên">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span class="s360-item-label">Thông tin cá nhân</span>
+          </button>
+          <button type="button" class="s360-subnav-btn" data-menu="co-van" title="Cố vấn học tập">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <polyline points="17 11 19 13 23 9"></polyline>
+            </svg>
+            <span class="s360-item-label">Cố vấn học tập</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Sidebar Bottom Collapse Button -->
+    <div class="s360-sidebar-footer">
+      <button type="button" class="s360-collapse-btn" id="btn-collapse-sidebar" title="Thu gọn / Mở rộng Sidebar">
+        <svg class="icon-collapse-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        <span class="collapse-text">Thu gọn</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Student360 Main Layout Wrapper -->
+  <div class="s360-main-layout" id="s360-main-layout">
+    <!-- Student360 Breadcrumb Navigation & Nav-Tabs Bar -->
+    <div class="s360-breadcrumb-bar">
+      <div class="s360-breadcrumb-container">
+        <ol class="s360-breadcrumb-list">
+          <li class="s360-breadcrumb-node">
+            <span class="s360-breadcrumb-link" id="breadcrumb-home" role="button" tabindex="0">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              Trang chủ
+            </span>
+          </li>
+          <li class="s360-breadcrumb-separator">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </li>
+          <li class="s360-breadcrumb-node">
+            <span class="s360-breadcrumb-link">Tài chính học vụ</span>
+          </li>
+          <li class="s360-breadcrumb-separator">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </li>
+          <li class="s360-breadcrumb-node active">
+            <span class="s360-breadcrumb-current">Học bổng & Đối khớp AI (ScholarMatch 360)</span>
+          </li>
+        </ol>
+
+        <!-- Feature View Mode Tabs inside Breadcrumbs Bar -->
+        <nav class="s360-tabs-nav" aria-label="Phân hệ học bổng">
+          <button class="nav-tab active" id="tab-nav-catalog" data-target="section-catalog">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
+            Kho Học Bổng Toàn Cầu
+          </button>
+          <button class="nav-tab" id="tab-nav-profile" data-target="section-profile">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Hồ Sơ & Gợi Ý Cá Nhân (Bento 360 & Radar)
+          </button>
+          <button class="nav-tab" id="tab-nav-chat" data-target="section-chat">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Trợ Lý AI Du Học 24/7
+          </button>
+        </nav>
+      </div>
+    </div>
 
   <!-- Main Content Layout -->
   <main class="main-container">
@@ -700,6 +984,25 @@
       </div>
     </section>
   </main>
+
+    <!-- Student360 Official Footer -->
+    <footer class="s360-footer">
+      <div class="s360-footer-inner">
+        <div class="s360-footer-left">
+          <div class="s360-footer-logo-box">
+            <img src="/images/CMC_logo_ver01.png" alt="CMC University Logo" class="s360-footer-logo" />
+          </div>
+          <div>
+            <p class="s360-footer-brand">Student 360 - Hệ thống hỗ trợ sinh viên toàn diện</p>
+            <p class="s360-footer-sub">Trường Đại học CMC · Phân hệ Đối Khớp & Săn Học Bổng Toàn Cầu</p>
+          </div>
+        </div>
+        <div class="s360-footer-right">
+          <p class="s360-footer-copy">© 2026 Student 360. Made by Digital University PMU.</p>
+        </div>
+      </div>
+    </footer>
+  </div>
 
   <!-- =========================================================================
        MODAL 1: XEM CHI TIẾT HỌC BỔNG (DÀNH CHO TAB 1 KHO HỌC BỔNG TOÀN CẦU)

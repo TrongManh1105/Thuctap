@@ -196,6 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
     initFormValues();
     attachEventListeners();
+    initStudent360Shell();
     updateChatContextBar();
     updateCompetencyRadarUI();
   } catch (err) {
@@ -2906,4 +2907,150 @@ function attachEventListeners() {
       sendChatMessage(query);
     });
   });
+}
+
+
+// --------------------------------------------------------------------------
+// Student360 Shell Layout & Sidebar Interactions
+// --------------------------------------------------------------------------
+function showStudent360Toast(message) {
+  let toast = document.getElementById('s360-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 's360-toast';
+    toast.className = 's360-toast-notification';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `<span style="font-size:1.1rem; line-height:1;">🎓</span><span>${message}</span>`;
+  toast.classList.add('visible');
+  clearTimeout(window._s360ToastTimer);
+  window._s360ToastTimer = setTimeout(() => {
+    toast.classList.remove('visible');
+  }, 3500);
+}
+
+function initStudent360Shell() {
+  // 1. Restore Sidebar Collapsed State from localStorage
+  const savedCollapsed = localStorage.getItem('s360_sidebar_collapsed');
+  if (savedCollapsed === 'true') {
+    document.body.classList.add('s360-sidebar-collapsed');
+  }
+
+  // 2. Collapse button at sidebar footer
+  const btnCollapse = document.getElementById('btn-collapse-sidebar');
+  if (btnCollapse) {
+    btnCollapse.addEventListener('click', () => {
+      const isCollapsed = document.body.classList.toggle('s360-sidebar-collapsed');
+      localStorage.setItem('s360_sidebar_collapsed', isCollapsed);
+    });
+  }
+
+  // 3. Header Hamburger Toggle (Mobile: open drawer; Desktop: collapse/expand)
+  const btnSidebarToggle = document.getElementById('btn-sidebar-toggle');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  if (btnSidebarToggle) {
+    btnSidebarToggle.addEventListener('click', () => {
+      if (window.innerWidth < 1024) {
+        document.body.classList.toggle('s360-sidebar-mobile-open');
+      } else {
+        const isCollapsed = document.body.classList.toggle('s360-sidebar-collapsed');
+        localStorage.setItem('s360_sidebar_collapsed', isCollapsed);
+      }
+    });
+  }
+
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', () => {
+      document.body.classList.remove('s360-sidebar-mobile-open');
+    });
+  }
+
+  // 4. Menu Group Collapsible Toggles
+  document.querySelectorAll('.s360-group-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const group = btn.closest('.s360-nav-group');
+      if (group) {
+        group.classList.toggle('collapsed-group');
+      }
+    });
+  });
+
+  // 5. Sidebar Navigation Items Click Handler
+  document.querySelectorAll('.s360-subnav-btn, .s360-nav-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const menu = btn.dataset.menu;
+      if (menu === 'hoc-bong') {
+        switchTab('section-catalog');
+        if (window.innerWidth < 1024) document.body.classList.remove('s360-sidebar-mobile-open');
+        return;
+      }
+      const label = btn.querySelector('.s360-item-label')?.textContent || btn.title || 'Mục này';
+      showStudent360Toast(`Chức năng "${label}" đang ở chế độ xem trước cấu trúc Student360. Phân hệ Học Bổng & Đối Khớp AI hiện đang hoạt động đầy đủ.`);
+      if (window.innerWidth < 1024) document.body.classList.remove('s360-sidebar-mobile-open');
+    });
+  });
+
+  // 6. Sidebar Live Search Filter
+  const sidebarSearch = document.getElementById('sidebar-search-input');
+  if (sidebarSearch) {
+    sidebarSearch.addEventListener('input', () => {
+      const q = sidebarSearch.value.trim().toLowerCase();
+      document.querySelectorAll('.s360-nav-group').forEach((grp) => {
+        let hasVisible = false;
+        grp.querySelectorAll('.s360-subnav-btn').forEach((item) => {
+          const txt = item.textContent.toLowerCase();
+          if (!q || txt.includes(q)) {
+            item.style.display = 'flex';
+            hasVisible = true;
+          } else {
+            item.style.display = 'none';
+          }
+        });
+        if (!q) {
+          grp.style.display = 'flex';
+        } else {
+          grp.style.display = hasVisible ? 'flex' : 'none';
+          if (hasVisible) grp.classList.remove('collapsed-group');
+        }
+      });
+    });
+  }
+
+  // 7. Breadcrumb Home Click -> Reset to Catalog Tab
+  const breadcrumbHome = document.getElementById('breadcrumb-home');
+  if (breadcrumbHome) {
+    breadcrumbHome.addEventListener('click', () => switchTab('section-catalog'));
+  }
+
+  // 8. Notifications Bell
+  const btnNotif = document.getElementById('btn-notifications');
+  if (btnNotif) {
+    btnNotif.addEventListener('click', () => {
+      showStudent360Toast('Hôm nay có 3 học bổng toàn phần mới dành cho sinh viên ngành AI & KHMT vừa được đồng bộ!');
+    });
+  }
+
+  // 9. System Features Button
+  const btnSys = document.getElementById('btn-system-features');
+  if (btnSys) {
+    btnSys.addEventListener('click', () => {
+      showStudent360Toast('Chức năng hệ thống Student360: Xem thời khóa biểu, điểm rèn luyện và trung tâm hỗ trợ.');
+    });
+  }
+
+  // 10. Role Switcher
+  const rolePill = document.getElementById('badge-user-role');
+  if (rolePill) {
+    rolePill.addEventListener('click', () => {
+      showStudent360Toast('Vai trò hiện tại: Sinh viên (Khóa 2026). Bạn có toàn quyền tìm kiếm và săn học bổng du học.');
+    });
+  }
+
+  // 11. Profile Pill Click -> Switch to Tab 2
+  const profilePill = document.getElementById('student-profile-pill');
+  if (profilePill) {
+    profilePill.addEventListener('click', () => {
+      switchTab('section-profile');
+    });
+  }
 }
