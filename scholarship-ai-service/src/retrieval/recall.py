@@ -1,3 +1,4 @@
+import re
 import logging
 from typing import Any, Dict, List, Optional
 from sqlalchemy import text
@@ -19,11 +20,17 @@ COUNTRY_ALIASES = {
     "úc": ["Úc", "Australia"],
     "canada": ["Canada"],
     "pháp": ["Pháp", "France"],
-    "hà lan": ["Hà Lan", "Netherlands"],
+    "hà lan": ["Hà Lan", "Netherlands", "Holland"],
     "singapore": ["Singapore"],
     "thụy điển": ["Thụy Điển", "Sweden"],
     "thụy sĩ": ["Thụy Sĩ", "Switzerland"],
     "đài loan": ["Đài Loan", "Taiwan"],
+    "phần lan": ["Phần Lan", "Finland"],
+    "finland": ["Phần Lan", "Finland"],
+    "ý": ["Ý", "Italy", "Italia"],
+    "italy": ["Ý", "Italy", "Italia"],
+    "new zealand": ["New Zealand", "NZ"],
+    "ireland": ["Ireland", "Ai-len"],
 }
 
 
@@ -93,7 +100,10 @@ async def recall_scholarships(
     hệ thống sẽ truy vấn đại diện đầy đủ từng nước, không để 1 quốc gia áp đảo kết quả.
     """
     filters = filters or {}
-    preferred_countries = filters.get("countries") or candidate_profile.get("preferred_countries") or []
+    if "countries" in filters:
+        preferred_countries = filters["countries"] if filters["countries"] is not None else []
+    else:
+        preferred_countries = candidate_profile.get("preferred_countries") or []
     target_degree = filters.get("degree_level") or candidate_profile.get("target_degree") or ""
     candidate_vec = candidate_profile.get("profile_vector")
 
@@ -101,8 +111,16 @@ async def recall_scholarships(
     base_params: Dict[str, Any] = {}
 
     if target_degree:
-        base_conditions.append("(degree_level ILIKE :deg OR degree_level IS NULL OR degree_level ILIKE '%Mọi bậc%')")
-        base_params["deg"] = f"%{target_degree.strip()}%"
+        t_clean = target_degree.strip().lower()
+        if "thạc sĩ" in t_clean or "master" in t_clean or "cao học" in t_clean:
+            base_conditions.append("(degree_level ILIKE '%Thạc sĩ%' OR degree_level ILIKE '%Master%' OR degree_level ILIKE '%Cao học%' OR degree_level ILIKE '%Postgraduate%' OR degree_level ILIKE '%Bachelors / Masters%' OR degree_level IS NULL OR degree_level ILIKE '%Mọi bậc%')")
+        elif "cử nhân" in t_clean or "bachelor" in t_clean or "đại học" in t_clean or "undergraduate" in t_clean:
+            base_conditions.append("(degree_level ILIKE '%Cử nhân%' OR degree_level ILIKE '%Bachelor%' OR degree_level ILIKE '%Undergraduate%' OR degree_level ILIKE '%Đại học%' OR degree_level ILIKE '%Bachelors / Masters%' OR degree_level ILIKE '%Thạc sĩ / Cử nhân%' OR degree_level IS NULL OR degree_level ILIKE '%Mọi bậc%')")
+        elif "tiến sĩ" in t_clean or "phd" in t_clean or "doctor" in t_clean:
+            base_conditions.append("(degree_level ILIKE '%Tiến sĩ%' OR degree_level ILIKE '%PhD%' OR degree_level ILIKE '%Doctor%' OR degree_level IS NULL OR degree_level ILIKE '%Mọi bậc%')")
+        else:
+            base_conditions.append("(degree_level ILIKE :deg OR degree_level IS NULL OR degree_level ILIKE '%Mọi bậc%')")
+            base_params["deg"] = f"%{target_degree.strip()}%"
 
     # Nếu người dùng chọn nhiều hơn 1 quốc gia -> Triển khai Balanced Recall theo từng quốc gia
     if preferred_countries and len(preferred_countries) > 1:
@@ -178,13 +196,72 @@ async def recall_target_scholarships(
     conditions = []
     params: Dict[str, Any] = {"limit": limit}
 
-    # Điều kiện trường mục tiêu
+    # Điều kiện trường mục tiêu (hỗ trợ bóc tách viết tắt, tên tiếng Việt và tên tiếng Anh)
     uni_clauses = []
-    for idx, u in enumerate(target_unis):
-        p_name = f"uni_{idx}"
-        uni_clauses.append(f"(source_name ILIKE :{p_name} OR title ILIKE :{p_name})")
-        params[p_name] = f"%{u.strip()}%"
-    conditions.append(f"({' OR '.join(uni_clauses)})")
+    param_counter = 0
+    for u in target_unis:
+        u_clean = u.strip()
+        aliases = {u_clean}
+        
+        # Bóc tách tên trong ngoặc đơn (ví dụ: SUSS, CGU, SNU, KAIST...)
+        paren_match = re.search(r'\((.*?)\)', u_clean)
+        if paren_match:
+            short_code = paren_match.group(1).strip()
+            if len(short_code) >= 2:
+                aliases.add(short_code)
+        
+        # Bóc tách tên trường không kèm ngoặc
+        base_name = re.sub(r'\(.*?\)', '', u_clean).strip()
+        if len(base_name) >= 3:
+            aliases.add(base_name)
+            # Rút gọn chữ 'Đại học' nếu có
+            if base_name.lower().startswith('đại học'):
+                aliases.add(base_name[7:].strip())
+
+        # Ánh xạ tên tiếng Anh phổ biến
+        u_lower = u_clean.lower()
+        if 'hanken' in u_lower:
+            aliases.update(['Hanken', 'Hanken School of Economics'])
+        elif 'aalto' in u_lower:
+            aliases.update(['Aalto', 'Aalto University'])
+        elif 'helsinki' in u_lower:
+            aliases.update(['Helsinki', 'University of Helsinki'])
+        elif 'tampere' in u_lower:
+            aliases.update(['Tampere', 'Tampere University'])
+        elif 'smu' in u_lower or 'quản lý singapore' in u_lower:
+            aliases.update(['SMU', 'Singapore Management University'])
+        elif 'suss' in u_lower or 'khoa học xã hội singapore' in u_lower:
+            aliases.update(['SUSS', 'Singapore University of Social Sciences'])
+        elif 'cgu' in u_lower or 'trường canh' in u_lower:
+            aliases.update(['CGU', 'Chang Gung'])
+        elif 'snu' in u_lower or 'quốc gia seoul' in u_lower:
+            aliases.update(['SNU', 'Seoul National University'])
+        elif 'kaist' in u_lower:
+            aliases.update(['KAIST', 'Korea Advanced Institute'])
+        elif 'yonsei' in u_lower:
+            aliases.update(['Yonsei'])
+        elif 'korea' in u_lower or 'đại học korea' in u_lower:
+            aliases.update(['Korea University'])
+        elif 'nus' in u_lower or 'quốc gia singapore' in u_lower:
+            aliases.update(['NUS', 'National University of Singapore'])
+        elif 'ntu' in u_lower or 'nanyang' in u_lower:
+            aliases.update(['NTU', 'Nanyang'])
+        elif 'sutd' in u_lower:
+            aliases.update(['SUTD', 'Singapore University of Technology'])
+
+        sub_clauses = []
+        for a in aliases:
+            if not a: continue
+            p_name = f"uni_alias_{param_counter}"
+            sub_clauses.append(f"(source_name ILIKE :{p_name} OR title ILIKE :{p_name})")
+            params[p_name] = f"%{a}%"
+            param_counter += 1
+
+        if sub_clauses:
+            uni_clauses.append(f"({' OR '.join(sub_clauses)})")
+
+    if uni_clauses:
+        conditions.append(f"({' OR '.join(uni_clauses)})")
 
     # Điều kiện quốc gia nếu có
     if preferred_countries:

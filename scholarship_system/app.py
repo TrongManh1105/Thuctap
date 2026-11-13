@@ -528,10 +528,10 @@ def match_v1_endpoint():
         filters = body.get("filters") or {}
         
         name = profile.get("full_name") or profile.get("name", "Ứng viên")
-        gpa = float(profile.get("gpa", 2.45))
-        ielts = float(profile.get("ielts", 4.5))
+        gpa = float(profile.get("gpa") or 2.45)
+        ielts = float(profile.get("english_score") or profile.get("ielts") or 4.5)
         major = profile.get("major", "Khoa học Máy tính")
-        preferred_countries = filters.get("countries") or profile.get("preferred_countries") or []
+        preferred_countries = filters["countries"] if ("countries" in filters and filters["countries"] is not None) else (profile.get("preferred_countries") or [])
         target_universities = profile.get("target_universities") or []
         
         conn = get_db_connection()

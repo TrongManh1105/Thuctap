@@ -27,20 +27,32 @@ QUY TẮC HỆ THỐNG:
 CV_EXTRACT_SYSTEM = """You are an expert academic resume and CV analyzer specialized in study-abroad profiles.
 Analyze the raw CV text and extract the candidate's academic and scholarship qualifications into a clean JSON object.
 
+CRITICAL TRUTHFULNESS RULES (DO NOT HALLUCINATE):
+1. GPA: If GPA is NOT explicitly written in the CV text, set "gpa": null. NEVER invent or guess a GPA.
+2. Scientific Publications: Only count formally published scientific papers in journals/conferences. Coursework / homework projects (bài tập lớn, đồ án) are NOT publications. If none, set "publications_count": 0.
+3. Research Awards: Only count formal academic or research competition awards. If none, set "awards_count": 0.
+4. Work Experience: If the candidate only has student projects or is seeking an internship, set "work_experience_years": 0.0.
+5. If IELTS is mentioned (e.g. "IELTS 5.5"), extract it accurately as a float (5.5).
+
 Output JSON format strictly (no markdown backticks, no explanatory text):
 {
   "full_name": "string",
+  "email": "string or null",
+  "phone": "string or null",
+  "university": "string or null",
   "target_degree": "Bachelor | Master | PhD",
-  "major": "string (e.g. Computer Science, AI, Business, etc.)",
-  "gpa": float or null (scaled to 4.0),
+  "major": "string",
+  "gpa": float or null,
   "ielts": float or null,
-  "topik_level": int (0-6),
+  "topik_level": int,
   "work_experience_years": float,
   "research_experience_years": float,
   "publications_count": int,
   "awards_count": int,
-  "preferred_countries": ["string", "string"],
-  "extracurricular_summary": "string",
-  "statement_of_purpose_snippet": "string"
+  "preferred_countries": ["string"],
+  "featured_projects": ["string"],
+  "coursework": ["string"],
+  "skills": ["string"],
+  "missing_fields": ["string"]
 }
 """

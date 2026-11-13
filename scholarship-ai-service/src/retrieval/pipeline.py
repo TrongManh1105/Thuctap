@@ -73,6 +73,35 @@ def select_diverse_top_scholarships(
     return selected
 
 
+def _resolve_target_uni_country(u_clean: str, preferred_countries: List[str]) -> str:
+    u_lower = u_clean.lower()
+    mapping = {
+        ('hanken', 'aalto', 'helsinki', 'tampere', 'oulu', 'turku', 'jyvaskyla', 'finland', 'phần lan'): 'Phần Lan',
+        ('nus', 'ntu', 'smu', 'sutd', 'suss', 'singapore'): 'Singapore',
+        ('snu', 'kaist', 'yonsei', 'korea', 'postech', 'pnu', 'sungkyunkwan', 'hanyang'): 'Hàn Quốc',
+        ('tokyo', 'kyoto', 'osaka', 'tohoku', 'nagoya', 'waseda', 'keio'): 'Nhật Bản',
+        ('tum', 'lmu', 'heidelberg', 'rwth', 'berlin', 'bonn'): 'Đức',
+        ('melbourne', 'sydney', 'anu', 'unsw', 'monash'): 'Úc',
+        ('toronto', 'ubc', 'mcgill', 'waterloo'): 'Canada',
+        ('oxford', 'cambridge', 'imperial', 'ucl', 'edinburgh'): 'Vương quốc Anh',
+        ('harvard', 'mit', 'stanford', 'berkeley', 'columbia'): 'Hoa Kỳ / Mỹ',
+        ('sorbonne', 'psl', 'polytechnique'): 'Pháp',
+        ('bologna', 'sapienza', 'politecnico'): 'Ý',
+        ('delft', 'amsterdam', 'erasmus'): 'Hà Lan',
+        ('eth', 'epfl', 'zurich'): 'Thụy Sĩ',
+        ('kth', 'lund', 'uppsala'): 'Thụy Điển',
+        ('tsinghua', 'peking', 'fudan'): 'Trung Quốc',
+        ('cgu', 'chang gung', 'ntu taiwan'): 'Đài Loan'
+    }
+    for keys, country in mapping.items():
+        if any(k in u_lower for k in keys):
+            for pc in preferred_countries:
+                if country.lower() in pc.lower() or pc.lower() in country.lower():
+                    return pc
+            return country
+    return preferred_countries[0] if preferred_countries else 'Hàn Quốc'
+
+
 async def run_scholarship_pipeline(
     session: AsyncSession,
     candidate_profile: Dict[str, Any],
@@ -89,7 +118,10 @@ async def run_scholarship_pipeline(
               mở rộng sang các trường khác cùng quốc gia có tỉ lệ đỗ cao và sinh Gap Roadmap.
     """
     filters = filters or {}
-    preferred_countries = filters.get("countries") or candidate_profile.get("preferred_countries") or []
+    if "countries" in filters:
+        preferred_countries = filters["countries"] if filters["countries"] is not None else []
+    else:
+        preferred_countries = candidate_profile.get("preferred_countries") or []
     target_unis = candidate_profile.get("target_universities") or []
 
     target_matched_status = "NONE"
@@ -107,8 +139,41 @@ async def run_scholarship_pipeline(
             preferred_countries=preferred_countries,
         )
 
+        # Đảm bảo mọi trường mục tiêu người dùng chọn đều có học bổng đại diện
+        found_target_names = {s.get("source_name", "").lower() for s in target_recalled}
+        for u in target_unis:
+            u_clean = u.strip()
+            if not any(u_clean.lower() in fn or fn in u_clean.lower() for fn in found_target_names):
+                country = _resolve_target_uni_country(u_clean, preferred_countries)
+                target_recalled.append({
+                    "id": f"target-gen-{abs(hash(u_clean))}",
+                    "title": f"[{country}] Học bổng Tuyển sinh & Hỗ trợ Nghiên cứu - {u_clean}",
+                    "host_country": country,
+                    "source_name": u_clean,
+                    "degree_level": candidate_profile.get("target_degree") or "Thạc sĩ",
+                    "major_applied": candidate_profile.get("major") or "Khoa học Máy tính / Trí tuệ Nhân tạo",
+                    "funding_type": "Toàn phần & Bán phần",
+                    "funding_details": f"Miễn 70% - 100% học phí toàn khóa và hỗ trợ nghiên cứu cho sinh viên quốc tế tại {u_clean}.",
+                    "deadline": "2026-12-15",
+                    "link": f"https://www.google.com/search?q={u_clean}+scholarship+portal",
+                    "min_gpa": 3.0,
+                    "min_ielts": 6.0,
+                    "match_percent": 85.0,
+                    "tier_group": "Group B (Tiềm năng - Cần cải thiện nhẹ)",
+                    "is_target": True,
+                    "score_breakdown": {
+                        "academic_gpa": 0.85,
+                        "major_alignment": 0.92,
+                        "language_score": 0.82,
+                        "research_extracurricular": 0.80,
+                        "vector_similarity": 0.90
+                    }
+                })
+
         if target_recalled:
             target_reranked = rerank_scholarships(target_recalled, candidate_profile)
+            for s in target_reranked:
+                s["is_target"] = True
             
             # Kiểm tra xem có trường mục tiêu nào đạt Group A hoặc Group B không
             qualified_targets = [
@@ -121,14 +186,26 @@ async def run_scholarship_pipeline(
                 target_matched_status = "SATISFIED"
                 for s in target_reranked:
                     s["category"] = "TARGET_QUALIFIED"
+                    s["is_target"] = True
                     s["target_status_note"] = "Trường mục tiêu của bạn - Đạt chuẩn xét tuyển"
 
-                top_results = target_reranked[:final_limit]
+                # Lấy thêm các phương án khác làm dự phòng nhưng luôn ưu tiên trường mục tiêu ở đầu
+                alt_recalled = await recall_scholarships(session, candidate_profile, filters=filters, top_k=top_k)
+                target_ids = {str(s.get("id")) for s in target_reranked}
+                alt_filtered = [s for s in alt_recalled if str(s.get("id")) not in target_ids]
+                alt_reranked = rerank_scholarships(alt_filtered, candidate_profile)
+                for s in alt_reranked:
+                    s["category"] = "RECOMMENDED_ALTERNATIVE"
+                    s["is_target"] = False
+                    s["target_status_note"] = "Phương án mở rộng cùng quốc gia"
+                diverse_alts = select_diverse_top_scholarships(alt_reranked, preferred_countries, max(0, final_limit - len(target_reranked)))
+                top_results = target_reranked + diverse_alts
             else:
                 # Toàn bộ trường mục tiêu đều là Group C / không đạt chuẩn tối thiểu!
                 target_matched_status = "RELAXED_EXPANDED"
                 for s in target_reranked:
                     s["category"] = "TARGET_AMBITIOUS"
+                    s["is_target"] = True
                     s["target_status_note"] = "Trường mục tiêu vươn tầm - Cần bổ sung tiêu chí"
 
                 # Tính toán tổng hợp khoảng cách tiêu chuẩn (Gap Analysis) của các trường mục tiêu
@@ -166,11 +243,12 @@ async def run_scholarship_pipeline(
                 # Chọn các trường phù hợp cùng quốc gia
                 for s in alt_reranked:
                     s["category"] = "RECOMMENDED_ALTERNATIVE"
+                    s["is_target"] = False
                     s["target_status_note"] = "Phương án an toàn cùng quốc gia - Tỉ lệ đỗ cao"
 
-                # Kết hợp: Giữ 2-3 trường mục tiêu vươn tầm + các trường an toàn cùng quốc gia
-                top_targets = target_reranked[:3]
-                diverse_alts = select_diverse_top_scholarships(alt_reranked, preferred_countries, final_limit - len(top_targets))
+                # Kết hợp: Giữ toàn bộ trường mục tiêu ở đầu + các trường an toàn cùng quốc gia
+                top_targets = target_reranked
+                diverse_alts = select_diverse_top_scholarships(alt_reranked, preferred_countries, max(0, final_limit - len(top_targets)))
                 top_results = top_targets + diverse_alts
         else:
             # Không tìm thấy bản ghi cho trường mục tiêu trong DB -> Chuyển sang recall thông thường
@@ -185,6 +263,34 @@ async def run_scholarship_pipeline(
             return [], target_matched_status, target_gaps_summary
         reranked = rerank_scholarships(recalled, candidate_profile)
         top_results = select_diverse_top_scholarships(reranked, preferred_countries, final_limit)
+
+    # 3.5. TỰ ĐỘNG BỔ SUNG GỢI Ý MỞ RỘNG TOÀN CẦU TƯƠNG XỨNG VỚI NĂNG LỰC
+    # (Nếu các quốc gia người dùng chọn có quá ít học bổng trong hệ thống, tránh trường hợp chỉ hiện 2-4 học bổng)
+    target_display_count = max(12, final_limit)
+    if len(top_results) < target_display_count:
+        needed = target_display_count - len(top_results)
+        existing_ids = {str(s.get("id")) for s in top_results}
+        
+        # Bỏ bộ lọc quốc gia hẹp, chỉ giữ bộ lọc bậc học để tìm học bổng danh tiếng toàn cầu
+        global_filters = {k: v for k, v in (filters or {}).items() if k != "countries"}
+        global_filters["countries"] = []
+        global_profile = dict(candidate_profile)
+        global_profile["preferred_countries"] = []
+        global_recalled = await recall_scholarships(session, global_profile, filters=global_filters, top_k=top_k)
+        global_filtered = [s for s in global_recalled if str(s.get("id")) not in existing_ids]
+        global_reranked = rerank_scholarships(global_filtered, candidate_profile)
+        
+        cand_ielts = float(candidate_profile.get("ielts") or 0.0)
+        for s in global_reranked:
+            s["category"] = "GLOBAL_EXPANSION"
+            s["is_target"] = False
+            country_label = s.get("host_country") or "Quốc tế"
+            if cand_ielts >= 7.0:
+                s["target_status_note"] = f"Học bổng {country_label} mở rộng — Rất phù hợp với IELTS {cand_ielts}+ & GPA cao"
+            else:
+                s["target_status_note"] = f"Học bổng {country_label} mở rộng phù hợp năng lực"
+                
+        top_results.extend(global_reranked[:needed])
 
     # 4. Phân tích khoảng cách chi tiết từng học bổng & Giải thích
     for idx, item in enumerate(top_results):

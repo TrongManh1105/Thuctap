@@ -5,7 +5,7 @@
 
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) 
   ? import.meta.env.VITE_API_BASE 
-  : '';
+  : 'http://localhost:7782';
 const API_KEY = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) 
   ? import.meta.env.VITE_API_KEY 
   : 'scholarship_internal_secret_key';
@@ -81,10 +81,10 @@ export async function matchScholarships(candidateProfile, filters = {}) {
         filters,
         top_k: 50,
         final_limit: 16,
-        explain: true,
-        explain_top_n: 5,
+        explain: false,
+        explain_top_n: 1,
       }),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(35000),
     });
 
     if (!res.ok) {
@@ -101,20 +101,46 @@ export async function extractCvProfile(file) {
   const formData = new FormData();
   formData.append('file', file);
 
-  const res = await fetch(`${API_BASE}/api/v1/scholarships/extract-cv`, {
-    method: 'POST',
-    headers: {
-      'X-API-Key': API_KEY,
-    },
-    body: formData,
-    signal: AbortSignal.timeout(15000),
-  });
+  const customGeminiKey = (typeof window !== 'undefined' && window.localStorage)
+    ? (window.localStorage.getItem('gemini_api_key') || '')
+    : '';
 
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.detail || `Upload failed with HTTP ${res.status}`);
+  const headers = {
+    'X-API-Key': API_KEY,
+  };
+  if (customGeminiKey) {
+    headers['X-Gemini-Key'] = customGeminiKey;
   }
-  return await res.json();
+
+  // Kết nối trực tiếp Backend 7782 trước để tránh lỗi socket/timeout của proxy Vite
+  const endpoints = [
+    `${API_BASE}/api/v1/scholarships/extract-cv`,
+    'http://localhost:7782/api/v1/scholarships/extract-cv',
+    '/api/v1/scholarships/extract-cv'
+  ];
+
+  let lastError = null;
+  for (const url of [...new Set(endpoints)]) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+        signal: AbortSignal.timeout(35000),
+      });
+
+      if (res.ok) {
+        return await res.json();
+      }
+      const errData = await res.json().catch(() => ({}));
+      lastError = new Error(errData.detail || `Upload failed with HTTP ${res.status}`);
+    } catch (err) {
+      lastError = err;
+      console.warn(`[CV Extraction] Thử endpoint ${url} không thành công:`, err.message);
+    }
+  }
+
+  throw lastError || new Error('Không thể kết nối đến backend AI để bóc tách CV');
 }
 
 export async function streamChat(message, history, candidateProfile, callbacks = {}) {
