@@ -3598,19 +3598,23 @@ async function handleCvUpload(file) {
       if (backendRes.full_name && cleanCandidateName(backendRes.full_name)) {
         merged.full_name = cleanCandidateName(backendRes.full_name);
       }
-      if (backendRes.gpa !== undefined && backendRes.gpa !== null && backendRes.gpa > 0) {
-        merged.gpa = backendRes.gpa;
+      const gpaVal = backendRes.gpa ?? backendRes.gpa_scale_4;
+      if (gpaVal !== undefined && gpaVal !== null && gpaVal > 0) {
+        merged.gpa = gpaVal;
         merged.has_gpa = true;
-      } else if (backendRes.has_gpa === false) {
+      } else if (backendRes.has_gpa === false || gpaVal === null) {
         merged.gpa = null;
         merged.has_gpa = false;
       }
-      if (backendRes.ielts !== undefined && backendRes.ielts !== null && backendRes.ielts > 0) {
-        merged.ielts = backendRes.ielts;
+      const ieltsVal = backendRes.ielts ?? backendRes.ielts_score;
+      if (ieltsVal !== undefined && ieltsVal !== null && ieltsVal > 0) {
+        merged.ielts = ieltsVal;
         merged.has_english = true;
       }
       if (backendRes.english_score) {
         merged.english_score = backendRes.english_score;
+      } else if (ieltsVal) {
+        merged.english_score = `IELTS ${ieltsVal}`;
       }
       if (backendRes.major) {
         merged.major = backendRes.major;
@@ -3618,10 +3622,12 @@ async function handleCvUpload(file) {
       if (backendRes.university && !backendRes.university.includes('Từ CV')) {
         merged.university = backendRes.university;
       }
-      if (backendRes.publications_count !== undefined) merged.publications_count = backendRes.publications_count;
-      if (backendRes.awards_count !== undefined) merged.awards_count = backendRes.awards_count;
+      const pubsCount = backendRes.publications_count ?? backendRes.research_papers_count;
+      if (pubsCount !== undefined && pubsCount !== null) merged.publications_count = pubsCount;
+      if (backendRes.awards_count !== undefined && backendRes.awards_count !== null) merged.awards_count = backendRes.awards_count;
       if (backendRes.target_degree) merged.target_degree = backendRes.target_degree;
-      if (backendRes.narrative) merged.narrative = backendRes.narrative;
+      const narrText = backendRes.narrative ?? backendRes.raw_summary;
+      if (narrText) merged.narrative = narrText;
       if (backendRes.skills && backendRes.skills.length > 0) merged.skills = backendRes.skills;
       if (backendRes.featured_projects && backendRes.featured_projects.length > 0) merged.featured_projects = backendRes.featured_projects;
       if (backendRes.coursework && backendRes.coursework.length > 0) merged.coursework = backendRes.coursework;

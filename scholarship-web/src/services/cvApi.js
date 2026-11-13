@@ -32,3 +32,4 @@ export async function uploadAndExtractCV(file) {
     throw error;
   }
 }
+

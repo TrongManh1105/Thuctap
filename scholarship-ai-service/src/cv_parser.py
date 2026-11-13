@@ -33,3 +33,4 @@ def extract_clean_text_from_pdf(file_bytes: bytes) -> str:
     full_text = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f-\x9f]', '', full_text)
     full_text = re.sub(r'[ \t]+', ' ', full_text)
     return full_text
+
