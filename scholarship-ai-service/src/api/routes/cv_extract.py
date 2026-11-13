@@ -390,30 +390,9 @@ async def extract_cv_profile(
 
         text_content = await asyncio.to_thread(_ocr_task, content)
 
-    # Baseline rule-based extraction (chạy trên text đã bóc tách từ PDF hoặc RapidOCR)
-    baseline_parsed = parse_cv_rule_based(text_content) if text_content.strip() else {
-        "full_name": "Ứng viên (Hồ sơ tải lên)",
-        "email": None,
-        "phone": None,
-        "university": "Cơ sở đào tạo (Từ CV)",
-        "target_degree": "Cử nhân",
-        "current_degree": "Cử nhân",
-        "major": "Kinh tế & Tài chính",
-        "gpa": None,
-        "has_gpa": False,
-        "ielts": None,
-        "toeic": None,
-        "english_score": "Chưa có chứng chỉ",
-        "publications_count": 0,
-        "awards_count": 0,
-        "work_experience_years": 0.0,
-        "work_experience": "Đang tích lũy kinh nghiệm",
-        "featured_projects": ["Dự án môn học thực tế"],
-        "coursework": ["Các môn học chuyên ngành"],
-        "skills": ["Kỹ năng phân tích", "Ngoại ngữ", "Tin học văn phòng"],
-        "missing_fields": ["gpa", "publications", "awards"],
-        "extracurricular_summary": "Tích cực tham gia các hoạt động ngoại khóa",
-    }
+    # Baseline rule-based extraction bằng bộ bóc tách siêu chuẩn cv_parser
+    from src.core.cv_parser import parse_full_cv
+    baseline_parsed = parse_full_cv(content, file.filename)
 
     # KIỂM TRA GEMINI MULTIMODAL API KEY (Nếu có cấu hình)
     active_gemini_key = (x_gemini_key or settings.GEMINI_API_KEY or "").strip()

@@ -20,6 +20,13 @@ from supabase_importer import generate_mock_vector_1536
 
 app = Flask(__name__)
 
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-API-Key, X-Gemini-Key"
+    return response
+
 SUPABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_URL", "postgresql://postgres.wzsztxegmqeuwgozlggt:Trongmanh1102205@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres")
 
 HF_AI_URL = os.environ.get("HF_AI_URL", "")
@@ -363,6 +370,26 @@ def health_ready():
         return jsonify({"status": "ready", "database": "connected", "total_scholarships": cnt})
     except Exception:
         return jsonify({"status": "ready", "database": "connected", "total_scholarships": 7964})
+
+@app.route("/api/v1/scholarships/extract-cv", methods=["POST", "OPTIONS"])
+def extract_cv_v1():
+    """Tự động bóc tách CV/Resume thành Profile Du học (Hỗ trợ 24/7 trên Cloud)."""
+    if request.method == "OPTIONS":
+        return "", 200
+    try:
+        from cv_parser import parse_full_cv
+        if "file" not in request.files:
+            return jsonify({"detail": "Không tìm thấy file tải lên"}), 400
+        uploaded_file = request.files["file"]
+        if not uploaded_file.filename.lower().endswith(".pdf"):
+            return jsonify({"detail": "Chỉ chấp nhận tệp định dạng PDF (.pdf)"}), 400
+        
+        content_bytes = uploaded_file.read()
+        parsed = parse_full_cv(content_bytes, uploaded_file.filename)
+        return jsonify(parsed), 200
+    except Exception as e:
+        print(f"[-] Lỗi bóc tách CV tại endpoint /api/v1/scholarships/extract-cv: {e}")
+        return jsonify({"detail": f"Lỗi bóc tách CV: {str(e)}"}), 500
 
 @app.route("/api/v1/scholarships/catalog", methods=["GET"])
 def get_catalog_v1():

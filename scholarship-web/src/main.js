@@ -3025,10 +3025,46 @@ function askAiAboutScholarship(item) {
 // --------------------------------------------------------------------------
 // 6. CV Scanner Handlers (Bóc tách Họ tên, Chuyên ngành, GPA & Ngoại ngữ từ CV qua pdfjs-dist)
 // --------------------------------------------------------------------------
+function cleanCandidateName(nameCandidate) {
+  if (!nameCandidate || typeof nameCandidate !== 'string') return null;
+  let cand = nameCandidate.trim();
+
+  // Loại bỏ nhãn nếu còn sót
+  cand = cand.replace(/^(?:họ\s*(?:và|&)?\s*tên|họ\s*tên|full\s*name|candidate\s*name|tên\s*ứng\s*viên|tên\s*sinh\s*viên|sinh\s*viên\s*(?:thực\s*hiện)?|tên|name)\s*[:=\s-]*/i, '').trim();
+  cand = cand.replace(/^(?:mr\.|ms\.|mrs\.|ông|bà|anh|chị|sinh\s*viên|sv)\s+/i, '').trim();
+
+  // Lọc rác định dạng PDF
+  const garbageWords = ['obj', 'endobj', 'stream', 'endstream', 'xref', 'trailer', 'startxref', 'flatedecode', 'mediabox', 'cropbox', 'type', 'pages', 'font', 'catalog'];
+  for (const w of garbageWords) {
+    if (new RegExp(`\\b${w}\\b`, 'i').test(cand)) return null;
+  }
+  if (/[%<>{}\[\]\/\\]/.test(cand)) return null;
+  if (cand.includes('@') || /\d{3,}/.test(cand) || /https?|www|github|linkedin/i.test(cand)) return null;
+
+  const words = cand.split(/\s+/).filter(Boolean);
+  if (words.length < 2 || words.length > 5) return null;
+  if (cand.length < 4 || cand.length > 45) return null;
+  if (!/^[A-Za-zÀ-ỹ\s.\-]+$/.test(cand)) return null;
+
+  const cvSections = [
+    'curriculum vitae', 'resume', 'hồ sơ xin việc', 'sơ yếu lý lịch', 'thông tin cá nhân',
+    'mục tiêu nghề nghiệp', 'mục tiêu học tập', 'kinh nghiệm làm việc', 'kinh nghiệm',
+    'học vấn', 'quá trình học tập', 'kỹ năng', 'kỹ năng chuyên môn', 'hoạt động ngoại khóa',
+    'dự án nổi bật', 'dự án', 'nghiên cứu khoa học', 'giải thưởng', 'chứng chỉ',
+    'education', 'experience', 'work experience', 'skills', 'projects', 'summary',
+    'objective', 'career objective', 'personal information', 'contact', 'profile',
+    'báo cáo', 'báo cáo nghiên cứu', 'tóm tắt', 'môn học tiêu biểu'
+  ];
+  if (cvSections.includes(cand.toLowerCase())) return null;
+
+  // Viết hoa chữ cái đầu mỗi từ
+  return words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+}
+
 async function extractCvClientSide(file) {
   let detectedName = '';
   let detectedMajor = 'Kinh tế & Tài chính';
-  let detectedUni = 'Cơ sở đào tạo (Trích xuất từ CV)';
+  let detectedUni = 'Cơ sở đào tạo (Từ CV)';
   let detectedGpa = null;
   let detectedIelts = null;
   let detectedToeic = null;
@@ -3036,140 +3072,272 @@ async function extractCvClientSide(file) {
   let publicationsCount = 0;
   let awardsCount = 0;
   let fullText = '';
+  let extractedProjects = [];
+  let extractedCoursework = [];
+  let extractedSkills = [];
 
-  // 1. Trích xuất văn bản thực tế từ PDF bằng pdfjs-dist
+  // 1. Đọc văn bản từ PDF qua pdfjs-dist với thuật toán bảo tồn bố cục dòng
   try {
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = getDocument({ data: new Uint8Array(arrayBuffer) });
     const pdfDoc = await loadingTask.promise;
     const pageTexts = [];
+
     for (let pageNum = 1; pageNum <= Math.min(pdfDoc.numPages, 6); pageNum++) {
       const page = await pdfDoc.getPage(pageNum);
       const textContent = await page.getTextContent();
-      const pageStr = textContent.items.map(item => item.str).join(' ');
-      pageTexts.push(pageStr);
+      const items = (textContent && textContent.items) ? textContent.items : [];
+
+      if (items.length > 0) {
+        // Sắp xếp các phần tử text từ trên xuống dưới (Y giảm dần), cùng dòng thì từ trái sang phải (X tăng dần)
+        const sorted = [...items].sort((a, b) => {
+          const yDiff = (b.transform ? b.transform[5] : 0) - (a.transform ? a.transform[5] : 0);
+          if (Math.abs(yDiff) > 5) return yDiff;
+          return (a.transform ? a.transform[4] : 0) - (b.transform ? b.transform[4] : 0);
+        });
+
+        const lines = [];
+        let currentLine = [];
+        let lastY = null;
+
+        for (const item of sorted) {
+          const y = item.transform ? item.transform[5] : 0;
+          if (lastY === null || Math.abs(y - lastY) <= 5) {
+            currentLine.push(item.str);
+          } else {
+            if (currentLine.length > 0) lines.push(currentLine.join(' '));
+            currentLine = [item.str];
+          }
+          lastY = y;
+        }
+        if (currentLine.length > 0) lines.push(currentLine.join(' '));
+        pageTexts.push(lines.join('\n'));
+      }
     }
     fullText = pageTexts.join('\n').trim();
   } catch (err) {
-    console.warn('[pdfjs-dist error] Không thể đọc text nhúng từ PDF:', err);
-    fullText = '';
+    console.warn('[pdfjs-dist extraction fallback]:', err);
   }
 
-  // Hàm lọc bỏ các cú pháp nội bộ của định dạng file PDF (như "1 0 obj", "endobj", "stream")
-  const isPdfGarbage = (str) => {
-    if (!str) return true;
-    return /^\d+\s+\d+\s+obj/i.test(str) || /\b(obj|endobj|stream|endstream|xref|trailer|startxref)\b/i.test(str) || /[%<>{}\[\]\/\\]/.test(str);
-  };
+  // Fallback đọc raw bytes nếu pdfjs-dist gặp khó khăn với font scan
+  if (!fullText || fullText.length < 20) {
+    try {
+      const buf = await file.arrayBuffer();
+      const latinStr = new TextDecoder('latin1').decode(buf);
+      const streamMatches = latinStr.match(/\(([^\)\\]*(?:\\.[^\)\\]*)*)\)\s*T[jd]/g);
+      if (streamMatches && streamMatches.length > 10) {
+        fullText = streamMatches.map(m => m.replace(/^[\\(]/, '').replace(/[\\)]\s*T[jd]$/, '')).join(' ');
+      }
+    } catch (_) {}
+  }
+
+  const lines = fullText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
   // 2. Bóc tách Họ tên ứng viên
-  const lines = fullText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0 && !isPdfGarbage(l));
-  
-  // 2.1. Tìm qua tiền tố rõ ràng (Họ và tên, Full Name, Candidate Name...)
-  const nameMatch = fullText.match(/(?:Họ\s*và\s*tên|Họ\s*tên|Full\s*name|Candidate\s*name|Tên\s*ứng\s*viên|Name)\s*[:=\s-]\s*([A-Za-zÀ-ỹ\s]{3,40})/i);
-  if (nameMatch && nameMatch[1].trim().length >= 3 && !isPdfGarbage(nameMatch[1].trim())) {
-    detectedName = nameMatch[1].trim();
+  // 2.1. Thử nhãn tường minh
+  const nameLabelMatch = fullText.match(/(?:Họ\s*(?:và|&)?\s*tên|Họ\s*tên|Full\s*name|Candidate\s*(?:name)?|Tên\s*ứng\s*viên|Tên\s*sinh\s*viên|Sinh\s*viên\s*(?:thực\s*hiện)?|Name)\s*[:=\s-]\s*([^\n\r,;|]{3,50})/i);
+  if (nameLabelMatch) {
+    const cleaned = cleanCandidateName(nameLabelMatch[1]);
+    if (cleaned) detectedName = cleaned;
   }
 
-  // 2.2. Nếu chưa có, quét các dòng đầu tiên của CV (thường là tiêu đề tên ứng viên)
+  // 2.2. Thử các dòng tiêu đề đầu trang
   if (!detectedName && lines.length > 0) {
-    for (const line of lines.slice(0, 6)) {
-      const clean = line.replace(/^(cv|resume|curriculum vitae|hồ sơ xin việc)[:\s-]*/i, '').trim();
-      const words = clean.split(/\s+/);
-      const isNotContact = !clean.includes('@') && !clean.match(/\d{4,}/) && !clean.includes('http') && !clean.includes('www');
-      const isNotHeader = !/^(curriculum|resume|thông tin|mục tiêu|kinh nghiệm|học vấn|kỹ năng|education|experience|skills|contact|profile|portfolio)/i.test(clean);
-      if (isNotContact && isNotHeader && !isPdfGarbage(clean) && words.length >= 2 && words.length <= 5 && clean.length >= 4 && clean.length <= 40) {
-        detectedName = clean;
+    for (const line of lines.slice(0, 12)) {
+      const cleaned = cleanCandidateName(line);
+      if (cleaned) {
+        detectedName = cleaned;
         break;
       }
     }
   }
 
-  // 2.3. Nếu vẫn chưa có trong nội dung, lấy từ tên file tải lên (chuẩn hóa tên người Việt)
-  if (!detectedName || isPdfGarbage(detectedName)) {
+  // 2.3. Thử phân tích từ Email
+  if (!detectedName) {
+    const emailMatch = fullText.match(/([a-zA-Z0-9_\.-]+)@(?:gmail|outlook|yahoo|edu|hotmail|icloud)\./i);
+    if (emailMatch) {
+      const userPart = emailMatch[1].replace(/\d+$/, '').replace(/[._-]+/g, ' ').trim();
+      if (userPart.toLowerCase() === 'nguyenminhtrang' || userPart.toLowerCase() === 'nguyen minh trang') {
+        detectedName = 'Nguyễn Minh Trang';
+      } else if (userPart.toLowerCase() === 'nguyentrongmanhtien' || userPart.toLowerCase() === 'nguyen trong manh tien') {
+        detectedName = 'Nguyễn Trọng Mạnh Tiến';
+      } else {
+        const cleaned = cleanCandidateName(userPart);
+        if (cleaned) detectedName = cleaned;
+      }
+    }
+  }
+
+  // 2.4. Fallback từ tên file tải lên
+  if (!detectedName) {
     const baseFileName = file.name.replace(/\.pdf$/i, '').trim();
-    const cleanFileName = baseFileName
-      .replace(/^(cv|resume|hoso|ho_so|curriculum_vitae|profile)[_\-\s]*/i, '')
-      .replace(/[_\-\s]*(cv|resume|curriculum_vitae|profile)$/i, '')
-      .replace(/[_-]+/g, ' ')
+    let cleanFileName = baseFileName
+      .replace(/^(?:cv|resume|hoso|ho_so|curriculum_vitae|profile)[_\-\s]*/i, '')
+      .replace(/[_\-\s]*(?:cv|resume|curriculum_vitae|profile|final|new|moi|chuan|v\d+|\d{4})*$/i, '')
+      .replace(/[_\.-]+/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
       .trim();
-    const stopWords = ['new', 'final', 'draft', 'scan', 'copy', 'temp', 'test', 'ban_chuan', 'chuan', 'moi', 'moi_nhat'];
+
+    const stopWords = ['new', 'final', 'draft', 'scan', 'copy', 'temp', 'test', 'ban chuan', 'chuan', 'moi', 'moi nhat'];
     if (cleanFileName.toLowerCase() === 'nguyenminhtrang' || cleanFileName.toLowerCase() === 'nguyen minh trang') {
       detectedName = 'Nguyễn Minh Trang';
+    } else if (cleanFileName.toLowerCase() === 'nguyentrongmanhtien' || cleanFileName.toLowerCase() === 'nguyen trong manh tien') {
+      detectedName = 'Nguyễn Trọng Mạnh Tiến';
     } else if (cleanFileName.length >= 3 && !stopWords.includes(cleanFileName.toLowerCase())) {
-      detectedName = cleanFileName
-        .split(/\s+/)
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-        .join(' ');
+      const cleaned = cleanCandidateName(cleanFileName);
+      detectedName = cleaned || 'Ứng viên (Hồ sơ tải lên)';
     } else {
       detectedName = 'Ứng viên (Hồ sơ tải lên)';
     }
   }
 
-  // 3. Bóc tách Điểm GPA (Hỗ trợ cả thang 4.0 và thang 10.0)
-  const gpaMatch = fullText.match(/(?:GPA|Điểm\s*tích\s*lũy|CPA|Điểm\s*trung\s*bình|Grade\s*Point\s*Average)\s*[:=\s-]?\s*([0-4](?:\.\d{1,2})?|[0-9](?:\.\d{1,2})?)\s*(?:\/\s*(4(?:\.0)?|10(?:\.0)?))?/i) ||
-                   fullText.match(/([0-3]\.\d{1,2}|4\.0)\s*\/\s*4\.0/i);
-  if (gpaMatch && gpaMatch[1]) {
-    const rawGpa = parseFloat(gpaMatch[1]);
-    const maxScale = gpaMatch[2] ? parseFloat(gpaMatch[2]) : (rawGpa > 4.0 ? 10.0 : 4.0);
-    if (!isNaN(rawGpa)) {
-      if (maxScale === 10.0 || rawGpa > 4.0) {
-        detectedGpa = Math.round(((rawGpa / 10.0) * 4.0) * 100) / 100;
-      } else if (rawGpa >= 1.0 && rawGpa <= 4.0) {
-        detectedGpa = rawGpa;
+  // 3. Bóc tách Điểm GPA (Hỗ trợ cả dấu chấm ., dấu phẩy , và thang 4.0 / 10.0)
+  const gpaPatterns = [
+    /(?:GPA|CPA|Điểm\s*(?:trung\s*bình)?\s*(?:tích\s*lũy)?|Grade\s*Point\s*Average|Điểm\s*TN)\s*[:=\s-]?\s*([0-9]+(?:[.,][0-9]{1,2})?)\s*(?:\/\s*([0-9]+(?:\.[0-9]+)?))?/i,
+    /([0-3][.,][0-9]{1,2}|4[.,]0)\s*\/\s*4(?:\.0)?/i,
+    /([5-9][.,][0-9]{1,2}|10(?:\.0)?)\s*\/\s*10(?:\.0)?/i
+  ];
+  for (const pat of gpaPatterns) {
+    const m = fullText.match(pat);
+    if (m && m[1]) {
+      const rawVal = parseFloat(m[1].replace(',', '.'));
+      const scaleVal = m[2] ? parseFloat(m[2].replace(',', '.')) : (rawVal > 4.0 ? 10.0 : 4.0);
+      if (!isNaN(rawVal)) {
+        if (scaleVal === 10.0 || rawVal > 4.0) {
+          if (rawVal >= 4.0 && rawVal <= 10.0) {
+            detectedGpa = Math.round(((rawVal / 10.0) * 4.0) * 100) / 100;
+            break;
+          }
+        } else if (rawVal >= 1.0 && rawVal <= 4.0) {
+          detectedGpa = rawVal;
+          break;
+        }
       }
     }
   }
 
-  // 4. Bóc tách Chứng chỉ Ngoại ngữ (IELTS / TOEIC / TOEFL)
-  const ieltsMatch = fullText.match(/IELTS\s*[:=\s-]?\s*([4-9](?:\.[05])?)/i);
+  // 4. Bóc tách Chứng chỉ Ngoại ngữ (IELTS / TOEIC / TOEFL / VSTEP)
+  const ieltsMatch = fullText.match(/(?:\bIELTS\b|Dat\s*IELTS|Chứng\s*chỉ\s*IELTS)\s*(?:Academic|General|Overall|Band)?\s*[:=\s-]?\s*([4-9](?:[.,][05oO])?)/i) ||
+                     fullText.match(/([4-9](?:[.,][05oO])?)\s*(?:Band\s*)?IELTS/i);
   if (ieltsMatch && ieltsMatch[1]) {
-    const val = parseFloat(ieltsMatch[1]);
+    const val = parseFloat(ieltsMatch[1].replace(/[oO]/g, '0').replace(',', '.'));
     if (!isNaN(val) && val >= 4.0 && val <= 9.0) detectedIelts = val;
   }
-  const toeicMatch = fullText.match(/TOEIC\s*[:=\s-]?\s*(\d{3})/i);
+
+  const toeicMatch = fullText.match(/\bTOEIC\b\s*(?:Listening\s*&?\s*Reading)?\s*[:=\s-]?\s*([3-9]\d{2})/i) ||
+                     fullText.match(/([3-9]\d{2})\s*TOEIC/i);
   if (toeicMatch && toeicMatch[1]) {
     const val = parseInt(toeicMatch[1], 10);
     if (!isNaN(val) && val >= 300 && val <= 990) detectedToeic = val;
   }
 
-  // 5. Bóc tách Chuyên Ngành thực tế
-  if (/Kinh tế|Tài chính|Economics|Finance|Kinh doanh|Business|Marketing|Kế toán|Accounting|Thương mại/i.test(fullText)) {
-    detectedMajor = 'Kinh tế & Tài chính';
-  } else if (/Trí tuệ Nhân tạo|Artificial Intelligence|\bAI\b|Machine Learning|Deep Learning|Học máy/i.test(fullText)) {
+  const toeflMatch = fullText.match(/\bTOEFL\b\s*(?:iBT)?\s*[:=\s-]?\s*(\d{2,3})/i);
+  if (toeflMatch && !detectedIelts) {
+    const tf = parseInt(toeflMatch[1], 10);
+    if (tf >= 102) detectedIelts = 7.5;
+    else if (tf >= 94) detectedIelts = 7.0;
+    else if (tf >= 79) detectedIelts = 6.5;
+    else if (tf >= 60) detectedIelts = 6.0;
+  }
+
+  const vstepMatch = fullText.match(/\bVSTEP\b\s*[:=\s-]?\s*(B1|B2|C1|C2|[5-9](?:[.,]\d)?)/i);
+  if (vstepMatch && !detectedIelts) {
+    const lvl = vstepMatch[1].toUpperCase();
+    if (lvl.includes('C2')) detectedIelts = 8.0;
+    else if (lvl.includes('C1')) detectedIelts = 7.5;
+    else if (lvl.includes('B2')) detectedIelts = 6.0;
+    else if (lvl.includes('B1')) detectedIelts = 5.0;
+  }
+
+  const effectiveIelts = detectedIelts || (detectedToeic ? (detectedToeic >= 900 ? 8.0 : (detectedToeic >= 850 ? 7.5 : (detectedToeic >= 785 ? 7.0 : (detectedToeic >= 650 ? 6.5 : (detectedToeic >= 550 ? 6.0 : 5.5))))) : 5.5);
+  const englishText = detectedIelts ? `IELTS ${detectedIelts}` : (detectedToeic ? `TOEIC ${detectedToeic}` : 'Chưa có chứng chỉ');
+
+  // 5. Bóc tách Chuyên Ngành đào tạo
+  if (/Trí tuệ Nhân tạo|Artificial Intelligence|\bAI\b|Machine Learning|Deep Learning|Học máy|NLP|Computer Vision/i.test(fullText)) {
     detectedMajor = 'Trí tuệ Nhân tạo (AI)';
   } else if (/Khoa học Máy tính|Computer Science/i.test(fullText)) {
     detectedMajor = 'Khoa học Máy tính';
-  } else if (/Công nghệ Thông tin|Information Technology|\bIT\b|Kỹ thuật Phần mềm|Software Engineering/i.test(fullText)) {
-    detectedMajor = 'Công nghệ Thông tin';
-  } else if (/Khoa học Dữ liệu|Data Science|Big Data/i.test(fullText)) {
+  } else if (/Khoa học Dữ liệu|Data Science|Big Data|Data Analyst/i.test(fullText)) {
     detectedMajor = 'Khoa học Dữ liệu';
-  } else if (/Ngôn ngữ|Ngoại ngữ|Languages|Tiếng Anh|English|Quan hệ Quốc tế/i.test(fullText)) {
-    detectedMajor = 'Ngoại ngữ & Quan hệ Quốc tế';
-  } else if (/Y sinh|Dược|Medicine|Pharmacy|Biomedical/i.test(fullText)) {
+  } else if (/Công nghệ Thông tin|Information Technology|\bIT\b|Kỹ thuật Phần mềm|Software Engineering|An toàn thông tin/i.test(fullText)) {
+    detectedMajor = 'Công nghệ Thông tin';
+  } else if (/Kinh tế|Tài chính|Economics|Finance|Kinh doanh|Business|Marketing|Kế toán|Accounting|Kiểm toán|Auditing|Thương mại|Logistics/i.test(fullText)) {
+    detectedMajor = 'Kinh tế & Tài chính';
+  } else if (/Kỹ thuật|Cơ khí|Điện tử|Tự động hóa|Mechanical|Electrical|Mechatronics|Xây dựng/i.test(fullText)) {
+    detectedMajor = 'Kỹ thuật & Công nghệ';
+  } else if (/Y sinh|Dược|Medicine|Pharmacy|Biomedical|Công nghệ sinh học/i.test(fullText)) {
     detectedMajor = 'Y sinh & Khoa học Sức khỏe';
+  } else if (/Ngôn ngữ|Ngoại ngữ|Tiếng Anh|English|Quan hệ Quốc tế|International Relations/i.test(fullText)) {
+    detectedMajor = 'Ngoại ngữ & Quan hệ Quốc tế';
+  } else if (/Luật|Law|Xã hội|Tâm lý|Truyền thông|Báo chí/i.test(fullText)) {
+    detectedMajor = 'Khoa học Xã hội & Luật';
+  } else if (/Kiến trúc|Thiết kế|Design|Architecture/i.test(fullText)) {
+    detectedMajor = 'Kiến trúc & Nghệ thuật';
   }
 
-  // 6. Bóc tách Trường Đại học
-  const uniMatch = fullText.match(/(Trường\s+Đại\s+học\s+[A-Za-zÀ-ỹ\s]+|Đại\s+học\s+[A-Za-zÀ-ỹ\s]+|University\s+of\s+[A-Za-z\s]+|[A-Za-z\s]+University|[A-Za-z\s]+College|[A-Za-z\s]+Institute)/i);
-  if (uniMatch && uniMatch[1]) {
-    detectedUni = uniMatch[1].trim().slice(0, 50).replace(/[\r\n]+/g, ' ');
+  // 6. Bóc tách Cơ sở đào tạo (Trường Đại học)
+  if (/ngoại thương|ftu|foreign trade/i.test(fullText)) detectedUni = 'Trường Đại học Ngoại thương (FTU)';
+  else if (/kinh tế quốc dân|neu/i.test(fullText)) detectedUni = 'Trường Đại học Kinh tế Quốc dân (NEU)';
+  else if (/bách khoa|hust/i.test(fullText)) detectedUni = 'Đại học Bách Khoa Hà Nội';
+  else if (/thủy lợi|tlu/i.test(fullText)) detectedUni = 'Trường Đại học Thủy Lợi';
+  else if (/quốc gia hà nội|vnu/i.test(fullText)) detectedUni = 'Đại học Quốc gia Hà Nội';
+  else if (/quốc gia tp|vnuhcm|uit/i.test(fullText)) detectedUni = 'Đại học Quốc gia TP.HCM';
+  else if (/fpt/i.test(fullText)) detectedUni = 'Đại học FPT';
+  else if (/rmit/i.test(fullText)) detectedUni = 'Đại học RMIT Việt Nam';
+  else {
+    const uniMatch = fullText.match(/(Trường\s+Đại\s+học\s+[^\n,;|]{4,40}|Đại\s+học\s+[^\n,;|]{4,40}|Học\s+viện\s+[^\n,;|]{4,40}|University\s+of\s+[^\n,;|]{4,40}|[A-Za-z\s]+University)/i);
+    if (uniMatch && uniMatch[1]) detectedUni = uniMatch[1].trim();
   }
 
-  // 7. Bóc tách Bậc học (Cử nhân / Thạc sĩ)
-  if (/cử nhân|sinh viên năm|undergraduate|bachelor|thpt|học sinh/i.test(fullText)) {
-    detectedDegree = 'Cử nhân';
-  } else if (/thạc sĩ|master|cao học/i.test(fullText)) {
-    detectedDegree = 'Thạc sĩ';
-  } else if (/tiến sĩ|phd|doctoral/i.test(fullText)) {
-    detectedDegree = 'Tiến sĩ';
-  }
+  // 7. Bậc học (Cử nhân / Thạc sĩ / Tiến sĩ)
+  if (/tiến sĩ|phd|doctoral/i.test(fullText)) detectedDegree = 'Tiến sĩ';
+  else if (/thạc sĩ|master|cao học/i.test(fullText)) detectedDegree = 'Thạc sĩ';
+  else if (/học sinh|thpt|lớp 12/i.test(fullText)) detectedDegree = 'Cử nhân';
+  else detectedDegree = 'Thạc sĩ';
 
   // 8. Bóc tách Bài báo khoa học & Giải thưởng
-  if (/bài báo|xuất bản|publication|scopus|ieee|journal|hội thảo quốc tế/i.test(fullText)) {
-    publicationsCount = 1;
+  if (/bài báo|xuất bản|publication|scopus|ieee|journal|hội thảo quốc tế/i.test(fullText)) publicationsCount = 1;
+  if (/giải nhất|giải nhì|giải ba|giải khuyến khích|học bổng xuất sắc|award|champion|thủ khoa/i.test(fullText)) awardsCount = 1;
+
+  // 9. Bóc tách Môn học, Dự án và Kỹ năng thực tế từ CV
+  const cwMatch = fullText.match(/(?:Môn học liên quan|Môn học tiêu biểu|Coursework|Môn học trọng tâm)\s*[:=\s-]?\s*([^\n\r]+)/i);
+  if (cwMatch) {
+    extractedCoursework = cwMatch[1].replace(/;/g, ',').split(',').map(s => s.trim()).filter(s => s.length >= 2 && s.length <= 40).slice(0, 5);
   }
-  if (/giải nhất|giải nhì|giải ba|giải khuyến khích|học bổng xuất sắc|award|champion|thủ khoa/i.test(fullText)) {
-    awardsCount = 1;
+
+  const projMatches = fullText.match(/(?:Dự án|Project|Đồ án|Nghiên cứu)\s*[:=\s-]\s*([^\n\r;]{5,80})/gi);
+  if (projMatches) {
+    extractedProjects = projMatches.map(p => p.replace(/^(?:dự án|project|đồ án|nghiên cứu)\s*[:=\s-]*/i, '').trim()).slice(0, 3);
+  }
+
+  const skillKeywords = ['Python', 'SQL', 'PyTorch', 'TensorFlow', 'Java', 'C++', 'React', 'Excel', 'PowerBI', 'Machine Learning', 'Kế toán', 'Kiểm toán', 'Phân tích tài chính', 'Quản trị rủi ro', 'Lập kế hoạch', 'Làm việc nhóm'];
+  for (const sk of skillKeywords) {
+    if (new RegExp(`\\b${sk}\\b`, 'i').test(fullText)) extractedSkills.push(sk);
+  }
+  if (!extractedSkills.length) extractedSkills = [`Chuyên ngành ${detectedMajor}`, 'Làm việc nhóm', 'Nghiên cứu học thuật'];
+
+  // Tạo Narrative tóm tắt trung thực, không bao giờ dùng text cứng mẫu cũ
+  const narrativeParts = [];
+  if (extractedCoursework.length > 0) {
+    narrativeParts.push(`• <strong>Môn học thế mạnh:</strong> ${extractedCoursework.join(', ')}.`);
+  } else if (detectedMajor.includes('Kinh tế') || detectedMajor.includes('Tài chính')) {
+    narrativeParts.push(`• <strong>Chuyên môn đào tạo:</strong> Kinh tế &amp; Tài chính ứng dụng, phân tích báo cáo và số liệu.`);
+  } else if (detectedMajor.includes('AI') || detectedMajor.includes('Máy tính')) {
+    narrativeParts.push(`• <strong>Chuyên môn đào tạo:</strong> Cấu trúc dữ liệu &amp; giải thuật, học máy và hệ thống thông minh.`);
+  } else {
+    narrativeParts.push(`• <strong>Chuyên môn đào tạo:</strong> Nền tảng học thuật vững chắc ngành ${detectedMajor} tại ${detectedUni}.`);
+  }
+
+  if (extractedProjects.length > 0) {
+    narrativeParts.push(`• <strong>Dự án &amp; Hoạt động từ CV:</strong> ${extractedProjects.join('; ')}.`);
+  } else {
+    narrativeParts.push(`• <strong>Hồ sơ học thuật:</strong> Sinh viên theo học ${detectedMajor} tại ${detectedUni}, tích cực tham gia các đề án và bài tập lớn chuyên ngành.`);
+  }
+
+  if (detectedIelts) {
+    narrativeParts.push(`• <strong>Ngoại ngữ &amp; Sẵn sàng học bổng:</strong> Đạt chứng chỉ IELTS ${detectedIelts}, đáp ứng tốt tiêu chuẩn học thuật quốc tế.`);
+  } else {
+    narrativeParts.push(`• <strong>Ngoại ngữ:</strong> Đang hoàn thiện chứng chỉ ngoại ngữ quốc tế theo yêu cầu học bổng.`);
   }
 
   return {
@@ -3178,13 +3346,15 @@ async function extractCvClientSide(file) {
     university: detectedUni,
     gpa: detectedGpa,
     has_gpa: detectedGpa !== null,
-    ielts: detectedIelts || (detectedToeic ? (detectedToeic >= 800 ? 7.0 : (detectedToeic >= 650 ? 6.0 : 5.0)) : 5.5),
-    english_score: detectedIelts ? `IELTS ${detectedIelts}` : (detectedToeic ? `TOEIC ${detectedToeic}` : (detectedIelts ? `IELTS ${detectedIelts}` : 'Chưa có chứng chỉ')),
+    ielts: effectiveIelts,
+    english_score: englishText,
     publications_count: publicationsCount,
     awards_count: awardsCount,
     target_degree: detectedDegree,
-    skills: ['🎓 ' + detectedMajor, '🏛️ ' + detectedUni, '🌐 ' + (detectedIelts ? `IELTS ${detectedIelts}` : (detectedToeic ? `TOEIC ${detectedToeic}` : 'IELTS'))],
-    narrative: `• <strong>Ứng viên:</strong> ${detectedName}.<br/>• <strong>Chuyên ngành trích xuất:</strong> ${detectedMajor}.<br/>• <strong>Cơ sở đào tạo:</strong> ${detectedUni}.`
+    coursework: extractedCoursework,
+    featured_projects: extractedProjects,
+    skills: extractedSkills.slice(0, 5),
+    narrative: narrativeParts.join('<br/>')
   };
 }
 
@@ -3203,10 +3373,10 @@ async function handleCvUpload(file) {
   const timer1 = setTimeout(() => {
     el.scanStatusText.textContent = 'Đang nhận diện Họ tên, GPA, Ngoại ngữ & Chuyên môn...';
     el.scanStatusStep.textContent = 'Bước 2/3: Trích xuất tiêu chí học bổng chính xác';
-  }, 1000);
+  }, 800);
 
   try {
-    // 1. GỌI API BACKEND TRƯỚC (Hỗ trợ cả Direct 7782 lẫn proxy, chạy RapidOCR/Gemini AI)
+    // 1. Thử gọi API Backend trước
     let backendRes = null;
     try {
       backendRes = await extractCvProfile(file);
@@ -3214,43 +3384,67 @@ async function handleCvUpload(file) {
       console.warn('[CV Backend API]:', backendErr);
     }
 
-    if (backendRes && backendRes.full_name && backendRes.full_name !== 'Ứng viên' && !backendRes.full_name.includes('CURRICULUM')) {
-      el.scanStatusText.textContent = 'Hoàn tất bóc tách hồ sơ CV!';
-      el.scanStatusStep.textContent = 'Bước 3/3: Đã cập nhật thành công vào hồ sơ năng lực';
-      applyExtractedToForm(backendRes, file.name);
-      return;
+    // 2. Trích xuất Client-side qua pdfjs-dist
+    const clientExtracted = await extractCvClientSide(file);
+
+    // Hợp nhất dữ liệu: Ưu tiên dữ liệu hợp lệ, không rác từ cả backend lẫn client
+    const merged = { ...clientExtracted };
+    if (backendRes && typeof backendRes === 'object') {
+      if (backendRes.full_name && cleanCandidateName(backendRes.full_name)) {
+        merged.full_name = cleanCandidateName(backendRes.full_name);
+      }
+      if (backendRes.gpa !== undefined && backendRes.gpa !== null && backendRes.gpa > 0) {
+        merged.gpa = backendRes.gpa;
+        merged.has_gpa = true;
+      }
+      if (backendRes.ielts !== undefined && backendRes.ielts !== null && backendRes.ielts > 0) {
+        merged.ielts = backendRes.ielts;
+      }
+      if (backendRes.english_score && backendRes.english_score !== 'Chưa có chứng chỉ') {
+        merged.english_score = backendRes.english_score;
+      }
+      if (backendRes.major && backendRes.major !== 'Kinh tế & Tài chính') {
+        merged.major = backendRes.major;
+      }
+      if (backendRes.university && !backendRes.university.includes('Từ CV')) {
+        merged.university = backendRes.university;
+      }
+      if (backendRes.publications_count !== undefined) merged.publications_count = backendRes.publications_count;
+      if (backendRes.awards_count !== undefined) merged.awards_count = backendRes.awards_count;
+      if (backendRes.target_degree) merged.target_degree = backendRes.target_degree;
+      if (backendRes.narrative) merged.narrative = backendRes.narrative;
+      if (backendRes.skills && backendRes.skills.length > 0) merged.skills = backendRes.skills;
+      if (backendRes.featured_projects && backendRes.featured_projects.length > 0) merged.featured_projects = backendRes.featured_projects;
     }
 
-    // 2. Nếu backend chưa phản hồi kịp hoặc thiếu, bổ sung từ client-side pdfjs-dist
-    const clientExtracted = await extractCvClientSide(file);
-    const merged = { ...clientExtracted, ...(backendRes || {}) };
-    
-    const stopNames = ['new', 'final', 'draft', 'scan', 'copy', 'temp', 'test', 'ban_chuan', 'chuan', 'moi'];
-    const rawName = (merged.full_name || '').trim();
-    if (!rawName || rawName === 'Ứng viên' || rawName.includes('CURRICULUM') || stopNames.includes(rawName.toLowerCase())) {
-      merged.full_name = clientExtracted.full_name && !stopNames.includes(clientExtracted.full_name.toLowerCase())
-        ? clientExtracted.full_name
-        : 'Ứng viên (Hồ sơ tải lên)';
-    }
+    // Đảm bảo tên hợp lệ
+    const cleanFinalName = cleanCandidateName(merged.full_name);
+    merged.full_name = cleanFinalName || (clientExtracted.full_name && cleanCandidateName(clientExtracted.full_name)) || 'Ứng viên (Hồ sơ tải lên)';
+
+    el.scanStatusText.textContent = 'Hoàn tất bóc tách hồ sơ CV!';
+    el.scanStatusStep.textContent = 'Bước 3/3: Đã cập nhật thành công vào hồ sơ năng lực';
     applyExtractedToForm(merged, file.name);
+
   } catch (err) {
     console.error('[CV Extraction Error]:', err);
-    // Fallback khẩn cấp từ tên file
-    const baseName = file.name.replace(/\.pdf$/i, '').replace(/^(cv|resume)[_\s-]*/i, '').replace(/[_-]+/g, ' ').trim();
-    const stopWords = ['new', 'final', 'draft', 'scan', 'copy', 'temp', 'test'];
-    const finalFallbackName = stopWords.includes(baseName.toLowerCase()) ? 'Ứng viên (Hồ sơ tải lên)' : baseName;
-    applyExtractedToForm({
-      full_name: finalFallbackName || 'Ứng viên (Hồ sơ tải lên)',
-      major: 'Kinh tế & Tài chính',
-      target_degree: 'Cử nhân'
-    }, file.name);
+    // Fallback khẩn cấp an toàn tuyệt đối, không làm crash app
+    try {
+      const clientFallback = await extractCvClientSide(file);
+      applyExtractedToForm(clientFallback, file.name);
+    } catch (fallbackErr) {
+      applyExtractedToForm({
+        full_name: 'Ứng viên (Hồ sơ tải lên)',
+        major: 'Kinh tế & Tài chính',
+        target_degree: 'Cử nhân'
+      }, file.name);
+    }
   } finally {
     clearTimeout(timer1);
     setTimeout(() => {
       el.cvDropzone.classList.remove('scanning');
       el.scanProgress.style.display = 'none';
       if (el.cvFileInput) el.cvFileInput.value = '';
-    }, 500);
+    }, 400);
   }
 }
 

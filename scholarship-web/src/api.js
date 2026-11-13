@@ -112,21 +112,20 @@ export async function extractCvProfile(file) {
     headers['X-Gemini-Key'] = customGeminiKey;
   }
 
-  // Kết nối trực tiếp Backend 7782 trước để tránh lỗi socket/timeout của proxy Vite
-  const endpoints = [
-    `${API_BASE}/api/v1/scholarships/extract-cv`,
-    'http://localhost:7782/api/v1/scholarships/extract-cv',
-    '/api/v1/scholarships/extract-cv'
-  ];
+  // Xác định thứ tự endpoints thông minh theo môi trường (Cloud HTTPS vs Localhost)
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const endpoints = isHttps
+    ? ['/api/v1/scholarships/extract-cv', `${API_BASE}/api/v1/scholarships/extract-cv`]
+    : ['http://localhost:7782/api/v1/scholarships/extract-cv', '/api/v1/scholarships/extract-cv', `${API_BASE}/api/v1/scholarships/extract-cv`];
 
   let lastError = null;
-  for (const url of [...new Set(endpoints)]) {
+  for (const url of [...new Set(endpoints.filter(Boolean))]) {
     try {
       const res = await fetch(url, {
         method: 'POST',
         headers,
         body: formData,
-        signal: AbortSignal.timeout(35000),
+        signal: AbortSignal.timeout(12000),
       });
 
       if (res.ok) {
