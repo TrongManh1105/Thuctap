@@ -1613,7 +1613,7 @@ async function executePersonalizedMatching(shouldScroll = false, triggerMode = n
     btnGpa.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span> Đang lưu...`;
   } else if (btnManual) {
     btnManual.disabled = true;
-    btnManual.innerHTML = `<span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span> Đang tìm kiếm học bổng du học phù hợp...`;
+    btnManual.innerHTML = `<span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span> Đang đối soát điều kiện học bổng...`;
   }
 
   const preferred = state.profile.preferred_countries || [];
@@ -1661,22 +1661,30 @@ async function executePersonalizedMatching(shouldScroll = false, triggerMode = n
     }
     if (btnManual) {
       btnManual.disabled = false;
-      btnManual.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Tìm Kiếm Học Bổng Du Học`;
+      btnManual.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Đánh Giá Năng Lực &amp; Đối Soát Học Bổng`;
     }
 
     renderPersonalizedDiagnosticCard();
     renderPersonalizedCards(state.matchedScholarships);
     renderTargetUniBanner();
 
-    // Luôn mở khối nhận xét điều kiện để nếu ứng viên quay lại tab Nộp Hồ Sơ vẫn xem được
+    // Luôn mở khối nhận xét điều kiện để ứng viên xem chi tiết Mặt Đủ Điều Kiện vs Mặt Thiếu Điều Kiện
     const matchedSection = document.getElementById('profile-matched-section');
     if (matchedSection) {
       matchedSection.style.display = 'block';
     }
 
-    // TỰ ĐỘNG CHUYỂN NGAY SANG TAB GỢI Ý HỌC BỔNG AI (section-ai-matches)
-    // khi người dùng bấm Tìm kiếm hoặc Nộp CV / Áp dụng GPA
-    if (triggerMode === 'manual' || triggerMode === 'cv' || triggerMode === 'gpa' || shouldScroll) {
+    // Khi người dùng bấm đối soát điều kiện (dù là nhập trực tiếp hay upload CV / Áp dụng GPA):
+    // Cuộn mượt mà xuống Bảng Đối Soát Điều Kiện 2 Cột để người dùng xem kết quả chi tiết trước!
+    if (triggerMode === 'manual' || triggerMode === 'cv' || triggerMode === 'gpa') {
+      if (matchedSection) {
+        setTimeout(() => {
+          matchedSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+      }
+      const count = state.matchedScholarships?.length || 0;
+      showStudent360Toast(`✓ Đã hoàn tất đối soát điều kiện! Mời bạn xem kết quả đánh giá 2 cột bên dưới.`);
+    } else if (shouldScroll) {
       switchTab('section-ai-matches');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       const count = state.matchedScholarships?.length || 0;
@@ -2070,10 +2078,11 @@ function renderTargetUniBanner() {
 function renderPersonalizedDiagnosticCard() {
   const p = state.profile;
   const gpa = p.gpa;
-  const ielts = p.ielts || 5.5;
+  const ielts = (p.ielts !== undefined && p.ielts !== null) ? p.ielts : 5.5;
   const pubs = p.publications_count || 0;
   const awards = p.awards_count || 0;
   const countries = p.preferred_countries && p.preferred_countries.length > 0 ? p.preferred_countries.join(', ') : 'Toàn cầu (Tất cả quốc gia)';
+  const targetUnis = p.target_universities && p.target_universities.length > 0 ? p.target_universities.join(', ') : '';
 
   const candNameEl = document.getElementById('diag-candidate-name');
   if (candNameEl) candNameEl.textContent = p.full_name || 'Nguyễn Trọng Mạnh Tiến';
@@ -2084,16 +2093,29 @@ function renderPersonalizedDiagnosticCard() {
     candStatsEl.textContent = `Mục tiêu: ${p.target_degree} • Ngành: ${p.major} • IELTS: ${ielts.toFixed(1)} • ${gpaText} • Quốc gia: ${countries}`;
   }
 
-  // Chỉ số sẵn sàng
-  let readiness = 60;
-  if (gpa && gpa >= 3.2 && ielts >= 6.5) readiness = 90;
-  else if (gpa && gpa >= 2.8 && ielts >= 5.5) readiness = 78;
-  else if (ielts >= 5.5) readiness = 72;
+  // Tính toán chỉ số sẵn sàng hồ sơ khách quan
+  let readiness = 50;
+  if (gpa !== null && gpa !== undefined) {
+    if (gpa >= 3.6) readiness += 25;
+    else if (gpa >= 3.2) readiness += 20;
+    else if (gpa >= 2.8) readiness += 15;
+    else if (gpa >= 2.5) readiness += 10;
+    else readiness += 5;
+  }
+  if (ielts) {
+    if (ielts >= 7.5) readiness += 20;
+    else if (ielts >= 6.5) readiness += 15;
+    else if (ielts >= 5.5) readiness += 10;
+    else readiness += 5;
+  }
+  if (pubs > 0) readiness += 5;
+  if (awards > 0) readiness += 5;
+  readiness = Math.min(95, Math.max(35, readiness));
 
   const readinessEl = document.getElementById('diag-readiness-val');
   if (readinessEl) readinessEl.textContent = `${readiness}%`;
 
-  // Cột Trái: Đủ Điều Kiện (Đã Có) - Tối giản, chỉ nêu tiêu chí đã có
+  // Cột Trái: Đủ Điều Kiện (Đã Có)
   const passedList = document.getElementById('diag-passed-list');
   if (passedList) {
     let passedHtml = '';
@@ -2115,25 +2137,51 @@ function renderPersonalizedDiagnosticCard() {
       </li>
     `;
 
-    if (ielts >= 5.5) {
+    if (countries && countries !== 'Toàn cầu (Tất cả quốc gia)') {
       passedHtml += `
         <li>
           <span class="item-check">✓</span>
           <div>
-            <strong>Chứng chỉ ngoại ngữ:</strong>
-            <span>IELTS ${ielts.toFixed(1)}</span>
+            <strong>Quốc gia nguyện vọng:</strong>
+            <span>${countries}</span>
           </div>
         </li>
       `;
     }
 
-    if (gpa && gpa >= 2.8) {
+    if (targetUnis) {
+      passedHtml += `
+        <li>
+          <span class="item-check">✓</span>
+          <div>
+            <strong>Trường mục tiêu ưu tiên:</strong>
+            <span>${targetUnis}</span>
+          </div>
+        </li>
+      `;
+    }
+
+    if (ielts >= 4.5) {
+      const langNote = ielts >= 6.5 ? 'Đạt chuẩn xét tuyển cạnh tranh' : 'Đạt chuẩn cơ sở nộp hồ sơ';
+      passedHtml += `
+        <li>
+          <span class="item-check">✓</span>
+          <div>
+            <strong>Chứng chỉ ngoại ngữ:</strong>
+            <span>IELTS ${ielts.toFixed(1)} (${langNote})</span>
+          </div>
+        </li>
+      `;
+    }
+
+    if (gpa !== null && gpa !== undefined && gpa >= 2.0) {
+      const gpaNote = gpa >= 3.2 ? 'Đạt chuẩn Giỏi / Xuất sắc' : gpa >= 2.8 ? 'Đạt chuẩn Khá' : 'Đạt ngưỡng điểm nộp hồ sơ xét tuyển';
       passedHtml += `
         <li>
           <span class="item-check">✓</span>
           <div>
             <strong>Điểm GPA tích lũy:</strong>
-            <span>${gpa.toFixed(2)} / 4.0</span>
+            <span>${gpa.toFixed(2)} / 4.0 (${gpaNote})</span>
           </div>
         </li>
       `;
@@ -2178,7 +2226,7 @@ function renderPersonalizedDiagnosticCard() {
     passedList.innerHTML = passedHtml;
   }
 
-  // Cột Phải: Thiếu Điều Kiện (Cần Bổ Sung) - Tối giản, chỉ nêu tiêu chí cần bổ sung
+  // Cột Phải: Thiếu Điều Kiện (Cần Bổ Sung)
   const missingList = document.getElementById('diag-missing-list');
   if (missingList) {
     let missingHtml = '';
@@ -2189,7 +2237,7 @@ function renderPersonalizedDiagnosticCard() {
           <span class="item-alert">!</span>
           <div>
             <strong>Điểm GPA tích lũy:</strong>
-            <span>Chưa có trong hồ sơ (Cần bổ sung bảng điểm)</span>
+            <span>Chưa có trong hồ sơ (Cần bổ sung bảng điểm chính thức)</span>
           </div>
         </li>
       `;
@@ -2198,32 +2246,8 @@ function renderPersonalizedDiagnosticCard() {
         <li>
           <span class="item-alert">!</span>
           <div>
-            <strong>Điểm GPA tích lũy:</strong>
-            <span>GPA ${gpa.toFixed(2)} / 4.0 (Mức chuẩn: 3.0+)</span>
-          </div>
-        </li>
-      `;
-    }
-
-    if (pubs === 0) {
-      missingHtml += `
-        <li>
-          <span class="item-alert">!</span>
-          <div>
-            <strong>Bài báo khoa học:</strong>
-            <span>Chưa có công bố khoa học (Hiện có: 0 bài)</span>
-          </div>
-        </li>
-      `;
-    }
-
-    if (awards === 0) {
-      missingHtml += `
-        <li>
-          <span class="item-alert">!</span>
-          <div>
-            <strong>Giải thưởng / NCKH:</strong>
-            <span>Chưa có giải thưởng học thuật / NCKH (Hiện có: 0 giải)</span>
+            <strong>Điểm GPA cạnh tranh:</strong>
+            <span>GPA hiện tại ${gpa.toFixed(2)} / 4.0 (Dưới mức khuyến nghị 3.0+ đối với học bổng trường và 3.2+ đối với học bổng toàn phần. Cần bài luận SOP nổi bật để bù đắp)</span>
           </div>
         </li>
       `;
@@ -2235,23 +2259,45 @@ function renderPersonalizedDiagnosticCard() {
           <span class="item-alert">!</span>
           <div>
             <strong>Chứng chỉ ngoại ngữ nâng cao:</strong>
-            <span>IELTS 6.5+ (Hiện có: ${ielts.toFixed(1)})</span>
+            <span>IELTS hiện tại ${ielts.toFixed(1)} (Khuyến nghị nâng lên tối thiểu 6.0 - 6.5+ để tăng cơ hội trúng tuyển học bổng toàn phần)</span>
           </div>
         </li>
       `;
     }
 
-    if (!missingHtml) {
-      missingHtml = `
-        <li style="color: #059669;">
-          <span class="item-check" style="background:#059669;">✓</span>
+    if (pubs === 0) {
+      missingHtml += `
+        <li>
+          <span class="item-alert">!</span>
           <div>
-            <strong>Hồ sơ hoàn thiện:</strong>
-            <span>Đã đáp ứng toàn bộ các tiêu chí cơ bản</span>
+            <strong>Bài báo khoa học xuất bản:</strong>
+            <span>Chưa có bài báo công bố (Khuyến nghị tham gia đề tài NCKH hoặc viết bài tham luận hội thảo sinh viên)</span>
           </div>
         </li>
       `;
     }
+
+    if (awards === 0) {
+      missingHtml += `
+        <li>
+          <span class="item-alert">!</span>
+          <div>
+            <strong>Giải thưởng / NCKH:</strong>
+            <span>Chưa có giải thưởng học thuật / NCKH (Nên chuẩn bị 02 thư giới thiệu LOR mạnh từ giảng viên để bù đắp)</span>
+          </div>
+        </li>
+      `;
+    }
+
+    missingHtml += `
+      <li>
+        <span class="item-alert">!</span>
+        <div>
+          <strong>Hồ sơ thủ tục:</strong>
+          <span>Bài luận mục đích (SOP) &amp; Bảng điểm dịch thuật công chứng tiếng Anh theo chuẩn quốc tế</span>
+        </div>
+      </li>
+    `;
 
     missingList.innerHTML = missingHtml;
   }
