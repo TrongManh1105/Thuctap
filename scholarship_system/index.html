@@ -20,8 +20,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
 
-  <script type="module" crossorigin src="/assets/index-BV8y3yzI.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-B8ktLT8S.css">
+  <script type="module" crossorigin src="/assets/index-DAWdANJQ.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-C6ndNUEG.css">
 </head>
 <body>
 
@@ -1020,7 +1020,7 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
-                Tìm Kiếm Học Bổng Du Học Phù Hợp
+                Đánh Giá Năng Lực &amp; Đối Soát Học Bổng
               </button>
             </div>
           </form>
@@ -1221,192 +1221,96 @@
       <div class="feed-header-wrap">
         <div>
           <h2 class="section-title">Theo Dõi Tiến Độ Ứng Tuyển Học Bổng</h2>
-          <p class="section-subtitle">Quản lý các hồ sơ học bổng theo mô hình Kanban: từ lưu trữ, hoàn thiện giấy tờ đến xét duyệt và phỏng vấn</p>
+          <p class="section-subtitle">Quản lý các hồ sơ học bổng của bạn theo tiến độ thực tế: từ lưu trữ, hoàn thiện giấy tờ đến xét duyệt và phỏng vấn</p>
         </div>
-        <div class="feed-stats-badge">
-          Tổng cộng <strong>10</strong> hồ sơ đang theo dõi
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-tracker-reset-empty" title="Xóa tất cả hồ sơ theo dõi để bắt đầu từ đầu" style="display: inline-flex; align-items: center; gap: 5px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Làm Trống
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-tracker-load-demo" title="Nạp dữ liệu mẫu minh họa tiến độ các vòng ứng tuyển" style="display: inline-flex; align-items: center; gap: 5px;">
+            🧪 Nạp Mẫu Demo
+          </button>
+          <div class="feed-stats-badge" id="tracker-stats-badge">
+            Tổng cộng <strong id="tracker-total-count">0</strong> hồ sơ đang theo dõi
+          </div>
         </div>
       </div>
 
-      <!-- Kanban 4 Columns -->
-      <div class="tracker-kanban">
+      <!-- Banner hướng dẫn khi chưa có hồ sơ nào -->
+      <div id="tracker-empty-banner" class="tracker-empty-banner" style="display: none;">
+        <div class="tracker-empty-card">
+          <div class="tracker-empty-icon">📁</div>
+          <h3 class="tracker-empty-title">Bạn Chưa Lưu Hoặc Theo Dõi Học Bổng Nào</h3>
+          <p class="tracker-empty-desc">
+            Tiến độ ứng tuyển sẽ được ghi nhận khi bạn bắt đầu quan tâm hoặc nộp hồ sơ. Hãy duyệt danh sách học bổng tại mục <strong>"Gợi Ý AI Riêng Bạn"</strong> hoặc <strong>"Cổng TT Học Bổng"</strong>, sau đó nhấn nút <strong>"📌 Theo Dõi"</strong> để quản lý toàn bộ quá trình chuẩn bị hồ sơ tại đây.
+          </p>
+          <div class="tracker-empty-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="btn-tracker-explore-matched">
+              🎓 Khám Phá Học Bổng Gợi Ý
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-tracker-explore-catalog">
+              🌍 Duyệt Kho Học Bổng
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kanban 4 Columns Dynamic Containers -->
+      <div class="tracker-kanban" id="tracker-kanban-board">
         <!-- Col 1: Saved -->
-        <div class="kanban-col">
+        <div class="kanban-col" id="kanban-col-saved">
           <div class="kanban-col-header">
             <span class="kanban-col-title" style="color: #64748B;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
               Đã Lưu
             </span>
-            <span class="kanban-col-count">4</span>
+            <span class="kanban-col-count" id="count-kanban-saved">0</span>
           </div>
-
-          <div class="kanban-card-item">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
-              <span style="font-size: 1.2rem;">🇬🇧</span>
-              <span class="dash-stat-badge" style="background: rgba(59, 130, 246, 0.1); color: #3B82F6;">Toàn phần</span>
-            </div>
-            <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 0.25rem;">Chevening Scholarship UK</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">Vương Quốc Anh • Thạc sĩ 1 năm</div>
-            <div style="font-size: 0.74rem; color: #EF4444; font-weight: 600;">⏳ Mở đơn: 01/08/2027</div>
-          </div>
-
-          <div class="kanban-card-item">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
-              <span style="font-size: 1.2rem;">🇯🇵</span>
-              <span class="dash-stat-badge" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">100% Học phí</span>
-            </div>
-            <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 0.25rem;">MEXT Japanese Government</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">Chính phủ Nhật Bản • Đại học Tokyo / Kyoto</div>
-            <div style="font-size: 0.74rem; color: var(--text-muted);">⏳ Hạn: 15/05/2027</div>
-          </div>
-
-          <div class="kanban-card-item">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
-              <span style="font-size: 1.2rem;">🇩🇪</span>
-              <span class="dash-stat-badge" style="background: rgba(139, 92, 246, 0.1); color: #8B5CF6;">Toàn phần</span>
-            </div>
-            <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 0.25rem;">DAAD Helmut-Schmidt Fellowship</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">Cơ quan Trao đổi Hàn lâm Đức • €934/tháng</div>
-            <div style="font-size: 0.74rem; color: var(--text-muted);">⏳ Hạn: 31/07/2027</div>
-          </div>
-
-          <div class="kanban-card-item">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
-              <span style="font-size: 1.2rem;">🇦🇺</span>
-              <span class="dash-stat-badge" style="background: rgba(59, 130, 246, 0.1); color: #3B82F6;">50% Học phí</span>
-            </div>
-            <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 0.25rem;">Melbourne International Merit</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">Australia • Đại học Melbourne</div>
-            <div style="font-size: 0.74rem; color: var(--text-muted);">⏳ Hạn: 30/11/2027</div>
+          <div class="kanban-col-body" id="body-kanban-saved">
+            <!-- Dynamic items rendered here -->
           </div>
         </div>
 
         <!-- Col 2: Preparing Documents -->
-        <div class="kanban-col" style="border-top: 3px solid #3B82F6;">
+        <div class="kanban-col" style="border-top: 3px solid #3B82F6;" id="kanban-col-preparing">
           <div class="kanban-col-header">
             <span class="kanban-col-title" style="color: #3B82F6;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               Đang Chuẩn Bị
             </span>
-            <span class="kanban-col-count" style="background: rgba(59, 130, 246, 0.15); color: #3B82F6;">3</span>
+            <span class="kanban-col-count" style="background: rgba(59, 130, 246, 0.15); color: #3B82F6;" id="count-kanban-preparing">0</span>
           </div>
-
-          <div class="kanban-card-item" style="border-left: 3px solid #3B82F6;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
-              <span style="font-size: 1.2rem;">🇰🇷</span>
-              <span class="dash-stat-badge" style="background: rgba(239, 68, 68, 0.12); color: #EF4444;">Gấp: Còn 6 ngày</span>
-            </div>
-            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.25rem;">KAIST STEM Global Fellowship</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.65rem;">Hàn Quốc • Thạc sĩ CS/AI</div>
-            <div style="margin-bottom: 0.5rem;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.74rem; margin-bottom: 0.25rem;">
-                <span>Tiến độ giấy tờ</span>
-                <strong style="color: #3B82F6;">75%</strong>
-              </div>
-              <div class="dash-comp-bar-bg" style="height: 6px;">
-                <div class="dash-comp-bar-fill" style="width: 75%; background: #3B82F6;"></div>
-              </div>
-            </div>
-            <div style="font-size: 0.75rem; color: #F59E0B; background: rgba(245, 158, 11, 0.08); padding: 0.3rem 0.5rem; border-radius: 6px;">
-              ⚠️ Cần nộp: 1 Thư giới thiệu từ Giáo sư Lab
-            </div>
-          </div>
-
-          <div class="kanban-card-item" style="border-left: 3px solid #3B82F6;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
-              <span style="font-size: 1.2rem;">🇺🇸</span>
-              <span class="dash-stat-badge" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">96% Match</span>
-            </div>
-            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.25rem;">Fulbright Master's Program 2027</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.65rem;">Mỹ • Toàn phần 100%</div>
-            <div style="margin-bottom: 0.5rem;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.74rem; margin-bottom: 0.25rem;">
-                <span>Tiến độ giấy tờ</span>
-                <strong style="color: #3B82F6;">50%</strong>
-              </div>
-              <div class="dash-comp-bar-bg" style="height: 6px;">
-                <div class="dash-comp-bar-fill" style="width: 50%; background: #3B82F6;"></div>
-              </div>
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-secondary);">
-              ✍️ Đang viết: Bài luận Statement of Purpose (SOP)
-            </div>
-          </div>
-
-          <div class="kanban-card-item" style="border-left: 3px solid #3B82F6;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
-              <span style="font-size: 1.2rem;">🇪🇺</span>
-              <span class="dash-stat-badge" style="background: rgba(139, 92, 246, 0.12); color: #8B5CF6;">€49,000</span>
-            </div>
-            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.25rem;">Erasmus Mundus AI & Data Science</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.65rem;">Châu Âu • Hạn: 10/01/2027</div>
-            <div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.74rem; margin-bottom: 0.25rem;">
-                <span>Tiến độ giấy tờ</span>
-                <strong style="color: #3B82F6;">40%</strong>
-              </div>
-              <div class="dash-comp-bar-bg" style="height: 6px;">
-                <div class="dash-comp-bar-fill" style="width: 40%; background: #3B82F6;"></div>
-              </div>
-            </div>
+          <div class="kanban-col-body" id="body-kanban-preparing">
+            <!-- Dynamic items rendered here -->
           </div>
         </div>
 
         <!-- Col 3: Submitted & Under Review -->
-        <div class="kanban-col" style="border-top: 3px solid #F59E0B;">
+        <div class="kanban-col" style="border-top: 3px solid #F59E0B;" id="kanban-col-reviewing">
           <div class="kanban-col-header">
             <span class="kanban-col-title" style="color: #F59E0B;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
               Đang Xét Duyệt
             </span>
-            <span class="kanban-col-count" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">2</span>
+            <span class="kanban-col-count" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;" id="count-kanban-reviewing">0</span>
           </div>
-
-          <div class="kanban-card-item" style="border-left: 3px solid #F59E0B;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
-              <span style="font-size: 1.2rem;">🇻🇳</span>
-              <span class="dash-stat-badge" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">Đã nộp</span>
-            </div>
-            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.25rem;">VinUniversity Excellence Fellowship</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">Việt Nam • Đã nộp: 02/11/2026</div>
-            <div style="font-size: 0.76rem; color: #F59E0B; background: rgba(245, 158, 11, 0.08); padding: 0.35rem 0.6rem; border-radius: 6px;">
-              ⏱️ Trạng thái: Hội đồng đang thẩm định hồ sơ vòng 1
-            </div>
-          </div>
-
-          <div class="kanban-card-item" style="border-left: 3px solid #F59E0B;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
-              <span style="font-size: 1.2rem;">🇸🇬</span>
-              <span class="dash-stat-badge" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">Đã nộp</span>
-            </div>
-            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.25rem;">ASEAN Youth Tech Talent Grant</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">Singapore • Đã nộp: 25/10/2026</div>
-            <div style="font-size: 0.76rem; color: #10B981; background: rgba(16, 185, 129, 0.08); padding: 0.35rem 0.6rem; border-radius: 6px;">
-              🎉 Đã qua vòng hồ sơ • Chờ lịch phỏng vấn (Dự kiến 25/11)
-            </div>
+          <div class="kanban-col-body" id="body-kanban-reviewing">
+            <!-- Dynamic items rendered here -->
           </div>
         </div>
 
         <!-- Col 4: Awarded -->
-        <div class="kanban-col" style="border-top: 3px solid #10B981;">
+        <div class="kanban-col" style="border-top: 3px solid #10B981;" id="kanban-col-awarded">
           <div class="kanban-col-header">
             <span class="kanban-col-title" style="color: #10B981;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               Đạt Học Bổng
             </span>
-            <span class="kanban-col-count" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">1</span>
+            <span class="kanban-col-count" style="background: rgba(16, 185, 129, 0.15); color: #10B981;" id="count-kanban-awarded">0</span>
           </div>
-
-          <div class="kanban-card-item" style="border-left: 3px solid #10B981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.08) 100%);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
-              <span style="font-size: 1.2rem;">🇻🇳</span>
-              <span class="dash-stat-badge" style="background: #10B981; color: #ffffff;">Đã nhận</span>
-            </div>
-            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.25rem;">Học Bổng Tài Năng Trẻ Đổi Mới Sáng Tạo (NIC)</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">Bộ Kế hoạch & Đầu tư • 100% Tài trợ NCKH</div>
-            <div style="font-size: 0.76rem; color: #10B981; font-weight: 700;">
-              🏆 Giá trị: 60.000.000 VNĐ tiền mặt + Tài trợ thiết bị AI
-            </div>
+          <div class="kanban-col-body" id="body-kanban-awarded">
+            <!-- Dynamic items rendered here -->
           </div>
         </div>
       </div>
@@ -1901,6 +1805,10 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           Mở Cổng Tuyển Sinh Chính Thức (Portal)
         </a>
+        <button type="button" class="btn btn-outline" id="btn-detail-track-scholarship" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          <span id="text-detail-track-btn">📌 Lưu Vào Theo Dõi</span>
+        </button>
         <button class="btn btn-outline" id="btn-detail-ask-ai">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Hỏi AI Về Học Bổng Này
@@ -1992,6 +1900,10 @@
         <button class="btn btn-primary" id="btn-modal-ask-ai">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Hỏi AI Về Học Bổng Này
+        </button>
+        <button type="button" class="btn btn-outline" id="btn-gap-track-scholarship" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          <span id="text-gap-track-btn">📌 Lưu Vào Theo Dõi</span>
         </button>
         <a href="#" target="_blank" class="btn btn-outline" id="modal-link-official" rel="noopener noreferrer">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>

@@ -11,3 +11,7 @@ services:
         value: 3.11.9
       - key: SUPABASE_URL
         value: postgresql://postgres.wzsztxegmqeuwgozlggt:Trongmanh1102205@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: gemini-3-flash-preview

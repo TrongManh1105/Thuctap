@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import settings
 from src.api.router import router as api_router
+from src.routers.cv_router import router as cv_router
 from src.infrastructure.db.postgres import check_db_connection, engine
 
 
@@ -32,6 +33,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+app.include_router(cv_router)
 
 
 if __name__ == "__main__":

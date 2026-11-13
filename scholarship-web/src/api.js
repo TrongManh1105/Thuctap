@@ -3,6 +3,9 @@
  * Interacts with FastAPI backend at http://localhost:7782 (or Vite proxy).
  */
 
+import { uploadAndExtractCV } from './services/cvApi.js';
+export { uploadAndExtractCV };
+
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) 
   ? import.meta.env.VITE_API_BASE 
   : 'http://localhost:7782';
@@ -115,24 +118,28 @@ export async function extractCvProfile(file) {
   // Xác định thứ tự endpoints thông minh theo môi trường (Cloud HTTPS vs Localhost)
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
   const endpoints = isHttps
-    ? ['/api/v1/scholarships/extract-cv', `${API_BASE}/api/v1/scholarships/extract-cv`]
-    : ['http://localhost:7782/api/v1/scholarships/extract-cv', '/api/v1/scholarships/extract-cv', `${API_BASE}/api/v1/scholarships/extract-cv`];
+    ? ['/api/cv/extract', '/api/v1/scholarships/extract-cv', `${API_BASE}/api/cv/extract`, `${API_BASE}/api/v1/scholarships/extract-cv`]
+    : ['/api/cv/extract', 'http://localhost:7782/api/cv/extract', '/api/v1/scholarships/extract-cv', `${API_BASE}/api/cv/extract`, `${API_BASE}/api/v1/scholarships/extract-cv`];
 
   let lastError = null;
   for (const url of [...new Set(endpoints.filter(Boolean))]) {
     try {
+      console.log(`[CV Extraction API] Đang gửi file ${file.name} lên:`, url);
       const res = await fetch(url, {
         method: 'POST',
         headers,
         body: formData,
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.timeout(35000),
       });
 
       if (res.ok) {
-        return await res.json();
+        const data = await res.json();
+        console.log(`[CV Extraction API] Thành công từ endpoint ${url}:`, data);
+        return data;
       }
       const errData = await res.json().catch(() => ({}));
       lastError = new Error(errData.detail || `Upload failed with HTTP ${res.status}`);
+      console.warn(`[CV Extraction] Endpoint ${url} trả về lỗi HTTP ${res.status}:`, lastError.message);
     } catch (err) {
       lastError = err;
       console.warn(`[CV Extraction] Thử endpoint ${url} không thành công:`, err.message);
