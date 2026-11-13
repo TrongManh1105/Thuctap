@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import re
+from typing import Optional
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from src.core.config import settings
 from src.cv_parser import extract_clean_text_from_pdf
@@ -24,20 +25,46 @@ async def call_llm(prompt: str) -> str:
     if active_key and len(active_key) > 10:
         try:
             from google import genai
+            from google.genai import types
             client = genai.Client(api_key=active_key)
-            model_to_use = settings.LLM_MODEL or "gemini-3-flash-preview"
-            if "gemini-2.0" in model_to_use or "gemini-2.5" in model_to_use:
-                model_to_use = "gemini-3-flash-preview"
+            raw_models = [
+                settings.LLM_MODEL,
+                os.environ.get("LLM_MODEL"),
+                "gemini-3.5-flash-lite",
+                "gemini-3.1-flash-lite",
+                "gemini-3.5-flash"
+            ]
+            model_candidates = []
+            for m in raw_models:
+                if not m:
+                    continue
+                m = m.strip()
+                if any(bad in m for bad in ["2.0", "2.5", "preview", "gemini-3-flash"]):
+                    continue
+                if m not in model_candidates:
+                    model_candidates.append(m)
+            for fb in ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.5-flash"]:
+                if fb not in model_candidates:
+                    model_candidates.append(fb)
 
             def _generate():
-                return client.models.generate_content(
-                    model=model_to_use,
-                    contents=prompt,
-                )
+                for m in model_candidates:
+                    try:
+                        cfg = types.GenerateContentConfig(response_mime_type="application/json")
+                        res = client.models.generate_content(
+                            model=m,
+                            contents=prompt,
+                            config=cfg
+                        )
+                        if res and res.text:
+                            return res.text.strip()
+                    except Exception as merr:
+                        logger.warning(f"[cv_router] Gemini {m} error: {merr}")
+                return None
 
-            res = await asyncio.wait_for(asyncio.to_thread(_generate), timeout=35.0)
-            if res and res.text:
-                return res.text.strip()
+            res_text = await asyncio.wait_for(asyncio.to_thread(_generate), timeout=35.0)
+            if res_text:
+                return res_text
         except Exception as e:
             logger.warning(f"[cv_router] Gemini API call failed: {e}")
 
@@ -54,16 +81,25 @@ async def call_llm(prompt: str) -> str:
     raise RuntimeError("Không thể kết nối đến dịch vụ AI LLM.")
 
 
-@router.post("/extract", response_model=ExtractedCandidateProfile)
-async def extract_cv_endpoint(file: UploadFile = File(...)):
-    filename = file.filename.lower()
+@router.post("/extract")
+async def extract_cv_endpoint(
+    file: Optional[UploadFile] = File(None),
+    cv: Optional[UploadFile] = File(None)
+):
+    actual_file = file or cv
+    if not actual_file:
+        raise HTTPException(
+            status_code=400,
+            detail="Không tìm thấy file tải lên (cần key 'file' hoặc 'cv')."
+        )
+    filename = actual_file.filename.lower()
     if not filename.endswith(('.pdf', '.docx')):
         raise HTTPException(
             status_code=400,
             detail="Định dạng file không hợp lệ. Vui lòng tải lên file .pdf hoặc .docx"
         )
     try:
-        file_bytes = await file.read()
+        file_bytes = await actual_file.read()
         if not file_bytes or len(file_bytes) == 0:
             raise HTTPException(status_code=400, detail="Tệp tin tải lên rỗng (0 bytes).")
 
@@ -110,7 +146,13 @@ CHỈ TRẢ VỀ DUY NHẤT ĐỐI TƯỢNG JSON HỢP LỆ, KHÔNG KÈM THEO B�
                 "featured_projects": baseline.get("featured_projects", [])
             }
 
-        return ExtractedCandidateProfile(**parsed_json)
+        profile = ExtractedCandidateProfile(**parsed_json)
+        payload = profile.model_dump()
+        return {
+            "success": True,
+            "data": payload,
+            **payload
+        }
 
     except ValueError as ve:
         raise HTTPException(status_code=422, detail=str(ve))

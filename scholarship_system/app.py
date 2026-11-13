@@ -371,6 +371,31 @@ def health_ready():
     except Exception:
         return jsonify({"status": "ready", "database": "connected", "total_scholarships": 7964})
 
+def clean_pdf_blocks(file_bytes):
+    """Trích xuất khối văn bản sạch từ PDF bảo toàn thứ tự đọc và cấu trúc 2 cột bằng PyMuPDF."""
+    import fitz
+    extracted_text = []
+    with fitz.open(stream=file_bytes, filetype="pdf") as doc:
+        if len(doc) == 0:
+            raise ValueError("File PDF rỗng.")
+        for page in doc:
+            blocks = page.get_text("blocks")
+            # Chỉ lấy các block văn bản (type == 0)
+            text_blocks = [b for b in blocks if b[6] == 0]
+            # Sắp xếp theo dòng y0 trước, cột x0 sau
+            text_blocks.sort(key=lambda b: (round(b[1] / 10) * 10, b[0]))
+            for b in text_blocks:
+                content = b[4].strip()
+                if content:
+                    extracted_text.append(content)
+    full_text = "\n\n".join(extracted_text)
+    if len(full_text.strip()) < 20:
+        raise ValueError("PDF không chứa lớp văn bản (text layer) hoặc là ảnh scan.")
+    # Khử ký tự lạ và khoảng trắng thừa (bảo toàn toàn bộ nguyên âm tiếng Việt Unicode)
+    full_text = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f-\x9f]', '', full_text)
+    full_text = re.sub(r'[ \t]+', ' ', full_text)
+    return full_text
+
 @app.route("/api/v1/scholarships/extract-cv", methods=["POST", "OPTIONS"])
 @app.route("/api/cv/extract", methods=["POST", "OPTIONS"])
 def extract_cv_v1():
@@ -379,16 +404,31 @@ def extract_cv_v1():
         return "", 200
     try:
         from cv_parser import parse_full_cv, clean_extracted_name, classify_major
-        if "file" not in request.files:
-            return jsonify({"detail": "Không tìm thấy file tải lên"}), 400
-        uploaded_file = request.files["file"]
-        if not uploaded_file.filename.lower().endswith(".pdf"):
-            return jsonify({"detail": "Chỉ chấp nhận tệp định dạng PDF (.pdf)"}), 400
-        
-        content_bytes = uploaded_file.read()
+
+        # Kiểm tra cả 2 key 'file' và 'cv' để tránh lỗi Form Key Mismatch
+        uploaded_file = request.files.get("file") or request.files.get("cv")
+        if not uploaded_file or uploaded_file.filename == "":
+            return jsonify({
+                "success": False,
+                "error": "Không tìm thấy file tải lên. Vui lòng chọn file CV (.pdf hoặc .docx)"
+            }), 400
+
+        filename = uploaded_file.filename.lower()
+        if not filename.endswith((".pdf", ".docx")):
+            return jsonify({
+                "success": False,
+                "error": "Định dạng file không hỗ trợ. Vui lòng tải lên file .pdf hoặc .docx"
+            }), 400
+
+        file_bytes = uploaded_file.read()
+        if not file_bytes:
+            return jsonify({"success": False, "error": "Tệp tải lên có kích thước 0 bytes."}), 400
+
+        # Trích xuất văn bản qua PyMuPDF blocks
+        cv_text = clean_pdf_blocks(file_bytes)
 
         # 1. Baseline Rule-based parser
-        baseline_parsed = parse_full_cv(content_bytes, uploaded_file.filename)
+        baseline_parsed = parse_full_cv(file_bytes, uploaded_file.filename, text_override=cv_text)
 
         # 2. Gemini Multimodal LLM Extraction
         import base64
@@ -400,7 +440,7 @@ def extract_cv_v1():
                 from google.genai import types
 
                 client = genai.Client(api_key=x_gemini_key)
-                part = types.Part.from_bytes(data=content_bytes, mime_type="application/pdf")
+                part = types.Part.from_bytes(data=file_bytes, mime_type="application/pdf")
                 prompt_instructions = """Bạn là chuyên gia thẩm định hồ sơ du học và học bổng quốc tế.
 Đọc kỹ tài liệu PDF CV đính kèm và trích xuất hồ sơ ứng viên thành JSON duy nhất theo schema:
 {
@@ -423,19 +463,51 @@ def extract_cv_v1():
   "coursework": ["môn học 1", "môn học 2"],
   "extracurricular_summary": "Tóm tắt hoạt động ngoại khóa"
 }
-QUY TẮC TRUNG THỰC TUYỆT ĐỐI:
-1. GPA: Nếu trong CV không có điểm GPA thì để null, không được đoán mò.
-2. Bài báo: Bài tập lớn, đồ án sinh viên không phải là bài báo xuất bản (publications_count = 0).
-3. Chỉ xuất JSON thuần túy, không có markdown codeblock hoặc lời giải thích."""
+QUY TẮC BẮT BUỘC:
+1. Đọc đúng Họ và Tên ứng viên từ đầu trang CV.
+2. GPA: Nếu trong CV không có điểm GPA thì để null, không được đoán mò.
+3. Bài báo: Bài tập lớn, đồ án sinh viên không phải là bài báo xuất bản (publications_count = 0).
+4. Chỉ xuất JSON thuần túy, không có markdown codeblock hoặc lời giải thích."""
 
-                model_to_use = os.environ.get("LLM_MODEL") or "gemini-3-flash-preview"
-                if "gemini-2.0" in model_to_use or "gemini-2.5" in model_to_use:
-                    model_to_use = "gemini-3-flash-preview"
+                # Cascade models: Ưu tiên gemini-3.5-flash-lite (cực nhanh & ổn định), sau đó fallback gemini-3.1-flash-lite, gemini-3.5-flash
+                raw_models = [
+                    os.environ.get("LLM_MODEL"),
+                    "gemini-3.5-flash-lite",
+                    "gemini-3.1-flash-lite",
+                    "gemini-3.5-flash"
+                ]
+                model_candidates = []
+                for m in raw_models:
+                    if not m:
+                        continue
+                    m = m.strip()
+                    if any(bad in m for bad in ["2.0", "2.5", "preview", "gemini-3-flash"]):
+                        continue
+                    if m not in model_candidates:
+                        model_candidates.append(m)
+                for fb in ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.5-flash"]:
+                    if fb not in model_candidates:
+                        model_candidates.append(fb)
 
-                response = client.models.generate_content(
-                    model=model_to_use,
-                    contents=[part, prompt_instructions]
-                )
+                response = None
+                used_model = None
+                for m in model_candidates:
+                    try:
+                        cfg = types.GenerateContentConfig(response_mime_type="application/json")
+                        response = client.models.generate_content(
+                            model=m,
+                            contents=[part, prompt_instructions],
+                            config=cfg
+                        )
+                        if response and response.text:
+                            used_model = m
+                            break
+                    except Exception as merr:
+                        print(f"[-] Model {m} failed: {merr}")
+
+                if not response or not response.text:
+                    raise ValueError("Không thể sinh phản hồi từ các mô hình Gemini.")
+
                 raw_text = response.text.strip()
                 raw_text = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
                 raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text)
@@ -451,7 +523,7 @@ QUY TẮC TRUNG THỰC TUYỆT ĐỐI:
                             cleaned_name = re.sub(r"Tiền$", "Tiến", cleaned_name)
                         parsed["full_name"] = cleaned_name
                     else:
-                        parsed["full_name"] = baseline_parsed.get("full_name")
+                        parsed["full_name"] = parsed["full_name"].strip() or baseline_parsed.get("full_name")
 
                 if parsed.get("gpa") is not None:
                     try:
@@ -475,6 +547,10 @@ QUY TẮC TRUNG THỰC TUYỆT ĐỐI:
                             parsed["english_score"] = f"IELTS {ielts_val}"
                     except Exception:
                         pass
+                if not parsed.get("english_score") and baseline_parsed.get("english_score"):
+                    parsed["english_score"] = baseline_parsed.get("english_score")
+                    parsed["ielts"] = parsed.get("ielts") or baseline_parsed.get("ielts")
+                    parsed["has_english"] = baseline_parsed.get("has_english", False)
 
                 if parsed.get("major"):
                     parsed["major"] = classify_major(parsed["major"])
@@ -488,18 +564,32 @@ QUY TẮC TRUNG THỰC TUYỆT ĐỐI:
                 parsed["ielts_score"] = parsed.get("ielts")
                 parsed["research_papers_count"] = parsed.get("publications_count", 0)
                 parsed["raw_summary"] = parsed.get("narrative") or parsed.get("work_experience") or ""
-                parsed["extraction_engine"] = "Gemini Multimodal AI (gemini-3-flash-preview)"
-                return jsonify(parsed), 200
+                parsed["extraction_engine"] = f"Gemini Multimodal AI ({used_model})"
+                return jsonify({
+                    "success": True,
+                    "data": parsed,
+                    **parsed
+                }), 200
             except Exception as gemini_err:
                 print(f"[-] Gemini AI extraction fallback to NLP rules: {gemini_err}")
                 baseline_parsed["extraction_engine"] = "High-Speed NLP Engine (Fallback)"
-                return jsonify(baseline_parsed), 200
+                return jsonify({
+                    "success": True,
+                    "data": baseline_parsed,
+                    **baseline_parsed
+                }), 200
 
         baseline_parsed["extraction_engine"] = "High-Speed NLP Engine"
-        return jsonify(baseline_parsed), 200
+        return jsonify({
+            "success": True,
+            "data": baseline_parsed,
+            **baseline_parsed
+        }), 200
+    except ValueError as ve:
+        return jsonify({"success": False, "error": str(ve)}), 422
     except Exception as e:
         print(f"[-] Lỗi bóc tách CV tại endpoint /api/v1/scholarships/extract-cv: {e}")
-        return jsonify({"detail": f"Lỗi bóc tách CV: {str(e)}"}), 500
+        return jsonify({"success": False, "error": f"Lỗi hệ thống khi phân tích CV: {str(e)}"}), 500
 
 @app.route("/api/v1/scholarships/catalog", methods=["GET"])
 def get_catalog_v1():

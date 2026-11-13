@@ -103,6 +103,7 @@ export async function matchScholarships(candidateProfile, filters = {}) {
 export async function extractCvProfile(file) {
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('cv', file); // Gửi cả 2 key để tương thích với mọi router
 
   const customGeminiKey = (typeof window !== 'undefined' && window.localStorage)
     ? (window.localStorage.getItem('gemini_api_key') || '')
@@ -133,12 +134,30 @@ export async function extractCvProfile(file) {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        console.log(`[CV Extraction API] Thành công từ endpoint ${url}:`, data);
+        const rawData = await res.json();
+        console.log(`[CV Extraction API] Thành công từ endpoint ${url}:`, rawData);
+        if (rawData && rawData.success === false) {
+          throw new Error(rawData.error || 'Trích xuất CV thất bại.');
+        }
+        const data = (rawData && rawData.data) ? rawData.data : rawData;
+        // Chuẩn hóa đồng bộ 2 chiều
+        data.gpa = data.gpa ?? data.gpa_scale_4;
+        data.gpa_scale_4 = data.gpa_scale_4 ?? data.gpa;
+        data.has_gpa = Boolean(data.gpa !== undefined && data.gpa !== null && data.gpa > 0);
+        data.ielts = data.ielts ?? data.ielts_score;
+        data.ielts_score = data.ielts_score ?? data.ielts;
+        if (data.ielts && !data.english_score) {
+          data.english_score = `IELTS ${data.ielts}`;
+        }
+        data.has_english = Boolean(data.ielts || data.has_english);
+        data.publications_count = data.publications_count ?? data.research_papers_count ?? 0;
+        data.research_papers_count = data.research_papers_count ?? data.publications_count;
+        data.narrative = data.narrative ?? data.raw_summary;
+        data.raw_summary = data.raw_summary ?? data.narrative;
         return data;
       }
       const errData = await res.json().catch(() => ({}));
-      lastError = new Error(errData.detail || `Upload failed with HTTP ${res.status}`);
+      lastError = new Error(errData.error || errData.detail || `Upload failed with HTTP ${res.status}`);
       console.warn(`[CV Extraction] Endpoint ${url} trả về lỗi HTTP ${res.status}:`, lastError.message);
     } catch (err) {
       lastError = err;

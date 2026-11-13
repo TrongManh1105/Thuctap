@@ -1,6 +1,6 @@
 export async function uploadAndExtractCV(file) {
   if (!file) {
-    throw new Error("Vui lòng chọn file CV.");
+    throw new Error("Chưa chọn file CV.");
   }
   const validExtensions = ['.pdf', '.docx'];
   const fileName = file.name.toLowerCase();
@@ -13,23 +13,25 @@ export async function uploadAndExtractCV(file) {
   }
 
   const formData = new FormData();
-  formData.append('file', file); // Lưu ý: key 'file' phải khớp với tham số Backend
+  // Gửi cả 2 key để tương thích linh hoạt với mọi router ('file' và 'cv')
+  formData.append('file', file);
+  formData.append('cv', file);
 
   try {
     const response = await fetch('/api/cv/extract', {
       method: 'POST',
-      body: formData, // TUYỆT ĐỐI KHÔNG thêm header 'Content-Type': 'multipart/form-data' ở đây
+      body: formData, // Tuyệt đối không để header 'Content-Type': 'multipart/form-data'
     });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.detail || err.message || `Lỗi tải file (${response.status})`);
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.success === false) {
+      const errorMsg = result.error || result.detail || `Lỗi tải file (${response.status})`;
+      throw new Error(errorMsg);
     }
 
-    return await response.json();
+    return result.data || result;
   } catch (error) {
     console.error("Lỗi trích xuất CV:", error);
     throw error;
   }
 }
-

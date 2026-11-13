@@ -3595,46 +3595,47 @@ async function handleCvUpload(file) {
     // Hợp nhất dữ liệu: Ưu tiên Backend AI nếu có dữ liệu hợp lệ
     const merged = { ...clientExtracted };
     if (backendRes && typeof backendRes === 'object') {
-      if (backendRes.full_name && cleanCandidateName(backendRes.full_name)) {
-        merged.full_name = cleanCandidateName(backendRes.full_name);
+      const candidateProfileData = backendRes.data || backendRes;
+      if (candidateProfileData.full_name) {
+        merged.full_name = cleanCandidateName(candidateProfileData.full_name) || candidateProfileData.full_name.trim();
       }
-      const gpaVal = backendRes.gpa ?? backendRes.gpa_scale_4;
+      const gpaVal = candidateProfileData.gpa ?? candidateProfileData.gpa_scale_4;
       if (gpaVal !== undefined && gpaVal !== null && gpaVal > 0) {
         merged.gpa = gpaVal;
         merged.has_gpa = true;
-      } else if (backendRes.has_gpa === false || gpaVal === null) {
+      } else if (candidateProfileData.has_gpa === false || gpaVal === null) {
         merged.gpa = null;
         merged.has_gpa = false;
       }
-      const ieltsVal = backendRes.ielts ?? backendRes.ielts_score;
+      const ieltsVal = candidateProfileData.ielts ?? candidateProfileData.ielts_score;
       if (ieltsVal !== undefined && ieltsVal !== null && ieltsVal > 0) {
         merged.ielts = ieltsVal;
         merged.has_english = true;
       }
-      if (backendRes.english_score) {
-        merged.english_score = backendRes.english_score;
+      if (candidateProfileData.english_score) {
+        merged.english_score = candidateProfileData.english_score;
       } else if (ieltsVal) {
         merged.english_score = `IELTS ${ieltsVal}`;
       }
-      if (backendRes.major) {
-        merged.major = backendRes.major;
+      if (candidateProfileData.major) {
+        merged.major = candidateProfileData.major;
       }
-      if (backendRes.university && !backendRes.university.includes('Từ CV')) {
-        merged.university = backendRes.university;
+      if (candidateProfileData.university && !candidateProfileData.university.includes('Từ CV')) {
+        merged.university = candidateProfileData.university;
       }
-      const pubsCount = backendRes.publications_count ?? backendRes.research_papers_count;
+      const pubsCount = candidateProfileData.publications_count ?? candidateProfileData.research_papers_count;
       if (pubsCount !== undefined && pubsCount !== null) merged.publications_count = pubsCount;
-      if (backendRes.awards_count !== undefined && backendRes.awards_count !== null) merged.awards_count = backendRes.awards_count;
-      if (backendRes.target_degree) merged.target_degree = backendRes.target_degree;
-      const narrText = backendRes.narrative ?? backendRes.raw_summary;
+      if (candidateProfileData.awards_count !== undefined && candidateProfileData.awards_count !== null) merged.awards_count = candidateProfileData.awards_count;
+      if (candidateProfileData.target_degree) merged.target_degree = candidateProfileData.target_degree;
+      const narrText = candidateProfileData.narrative ?? candidateProfileData.raw_summary;
       if (narrText) merged.narrative = narrText;
-      if (backendRes.skills && backendRes.skills.length > 0) merged.skills = backendRes.skills;
-      if (backendRes.featured_projects && backendRes.featured_projects.length > 0) merged.featured_projects = backendRes.featured_projects;
-      if (backendRes.coursework && backendRes.coursework.length > 0) merged.coursework = backendRes.coursework;
+      if (candidateProfileData.skills && candidateProfileData.skills.length > 0) merged.skills = candidateProfileData.skills;
+      if (candidateProfileData.featured_projects && candidateProfileData.featured_projects.length > 0) merged.featured_projects = candidateProfileData.featured_projects;
+      if (candidateProfileData.coursework && candidateProfileData.coursework.length > 0) merged.coursework = candidateProfileData.coursework;
     }
 
     // Đảm bảo tên hợp lệ và chuẩn hóa chính tả thanh điệu
-    let cleanFinalName = cleanCandidateName(merged.full_name);
+    let cleanFinalName = cleanCandidateName(merged.full_name) || merged.full_name;
     if (cleanFinalName) {
       if (cleanFinalName.includes('Mạnh Tiền')) {
         cleanFinalName = cleanFinalName.replace('Mạnh Tiền', 'Mạnh Tiến');
