@@ -375,22 +375,21 @@ def clean_pdf_blocks(file_bytes):
     """Trích xuất khối văn bản sạch từ PDF bảo toàn thứ tự đọc và cấu trúc 2 cột bằng PyMuPDF."""
     import fitz
     extracted_text = []
-    with fitz.open(stream=file_bytes, filetype="pdf") as doc:
-        if len(doc) == 0:
-            raise ValueError("File PDF rỗng.")
-        for page in doc:
-            blocks = page.get_text("blocks")
-            # Chỉ lấy các block văn bản (type == 0)
-            text_blocks = [b for b in blocks if b[6] == 0]
-            # Sắp xếp theo dòng y0 trước, cột x0 sau
-            text_blocks.sort(key=lambda b: (round(b[1] / 10) * 10, b[0]))
-            for b in text_blocks:
-                content = b[4].strip()
-                if content:
-                    extracted_text.append(content)
+    try:
+        with fitz.open(stream=file_bytes, filetype="pdf") as doc:
+            for page in doc:
+                blocks = page.get_text("blocks")
+                # Chỉ lấy các block văn bản (type == 0)
+                text_blocks = [b for b in blocks if len(b) > 6 and b[6] == 0]
+                # Sắp xếp theo dòng y0 trước, cột x0 sau
+                text_blocks.sort(key=lambda b: (round(b[1] / 10) * 10, b[0]))
+                for b in text_blocks:
+                    content = b[4].strip()
+                    if content:
+                        extracted_text.append(content)
+    except Exception as e:
+        print(f"[-] PyMuPDF extraction warning: {e}")
     full_text = "\n\n".join(extracted_text)
-    if len(full_text.strip()) < 20:
-        raise ValueError("PDF không chứa lớp văn bản (text layer) hoặc là ảnh scan.")
     # Khử ký tự lạ và khoảng trắng thừa (bảo toàn toàn bộ nguyên âm tiếng Việt Unicode)
     full_text = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f-\x9f]', '', full_text)
     full_text = re.sub(r'[ \t]+', ' ', full_text)
@@ -433,22 +432,34 @@ def extract_cv_v1():
         # 2. Gemini Multimodal LLM Extraction
         import base64
         _DEFAULT_KEY = base64.b64decode(b"QVEuQWI4Uk42S1pzYmgzS0hjOVRzaHVXVmFDb3FURHBIUlMzeGNZUnp0VEhtMkUzcV93Q0E=").decode("ascii")
-        x_gemini_key = (request.headers.get("X-Gemini-Key") or os.environ.get("GEMINI_API_KEY") or _DEFAULT_KEY).strip()
-        if x_gemini_key and len(x_gemini_key) > 10:
+        
+        candidate_keys = []
+        raw_header_key = (request.headers.get("X-Gemini-Key") or "").strip("'\" \t\r\n")
+        if raw_header_key and len(raw_header_key) > 10:
+            candidate_keys.append(raw_header_key)
+        env_key = (os.environ.get("GEMINI_API_KEY") or "").strip("'\" \t\r\n")
+        if env_key and len(env_key) > 10 and env_key not in candidate_keys:
+            candidate_keys.append(env_key)
+        if _DEFAULT_KEY not in candidate_keys:
+            candidate_keys.append(_DEFAULT_KEY)
+
+        parsed = None
+        used_model = None
+
+        if candidate_keys:
             try:
                 from google import genai
                 from google.genai import types
 
-                client = genai.Client(api_key=x_gemini_key)
                 part = types.Part.from_bytes(data=file_bytes, mime_type="application/pdf")
-                prompt_instructions = """Bạn là chuyên gia thẩm định hồ sơ du học và học bổng quốc tế.
-Đọc kỹ tài liệu PDF CV đính kèm và trích xuất hồ sơ ứng viên thành JSON duy nhất theo schema:
-{
+                prompt_instructions = f"""Bạn là chuyên gia thẩm định hồ sơ du học và học bổng quốc tế cấp cao.
+Nhiệm vụ: Đọc kỹ tài liệu PDF CV đính kèm (hỗ trợ mọi định dạng: 1 cột, 2 cột, Canva, TopCV, scan, ảnh, tiếng Việt hoặc tiếng Anh) và trích xuất hồ sơ ứng viên thành JSON duy nhất theo schema:
+{{
   "full_name": "Họ và tên ứng viên (đúng chính tả tiếng Việt có dấu)",
   "email": "Email liên hệ",
   "phone": "Số điện thoại liên hệ",
   "university": "Tên trường đại học đã/đang theo học",
-  "major": "Chuyên ngành học",
+  "major": "Chuyên ngành học (ví dụ: Trí tuệ Nhân tạo, Khoa học Máy tính, Công nghệ Thông tin, Kinh tế...)",
   "target_degree": "Bậc học mục tiêu (Cử nhân, Thạc sĩ, Tiến sĩ)",
   "current_degree": "Bậc học hiện tại (Cử nhân, Thạc sĩ, Tiến sĩ)",
   "gpa": float hoặc null (Quy đổi về hệ 4.0 nếu hệ 10; nếu không có GPA thì để null, tuyệt đối không bịa),
@@ -461,15 +472,19 @@ def extract_cv_v1():
   "skills": ["kỹ năng 1", "kỹ năng 2"],
   "featured_projects": ["dự án 1", "dự án 2"],
   "coursework": ["môn học 1", "môn học 2"],
-  "extracurricular_summary": "Tóm tắt hoạt động ngoại khóa"
-}
+  "narrative": "Tóm tắt ngắn gọn 2-3 câu về năng lực nổi bật, kỹ năng và định hướng học bổng"
+}}
+
+NỘI DUNG VĂN BẢN TRÍCH XUẤT ĐƯỢC:
+\"\"\"{cv_text[:3500]}\"\"\"
+
 QUY TẮC BẮT BUỘC:
-1. Đọc đúng Họ và Tên ứng viên từ đầu trang CV.
+1. Đọc đúng Họ và Tên ứng viên từ đầu trang CV (không nhầm với tên trường/ngành).
 2. GPA: Nếu trong CV không có điểm GPA thì để null, không được đoán mò.
 3. Bài báo: Bài tập lớn, đồ án sinh viên không phải là bài báo xuất bản (publications_count = 0).
 4. Chỉ xuất JSON thuần túy, không có markdown codeblock hoặc lời giải thích."""
 
-                # Cascade models: Ưu tiên gemini-3.5-flash-lite (cực nhanh & ổn định), sau đó fallback gemini-3.1-flash-lite, gemini-3.5-flash
+                # Cascade models: Ưu tiên gemini-3.5-flash-lite, sau đó fallback gemini-3.1-flash-lite, gemini-3.5-flash
                 raw_models = [
                     os.environ.get("LLM_MODEL"),
                     "gemini-3.5-flash-lite",
@@ -489,30 +504,34 @@ QUY TẮC BẮT BUỘC:
                     if fb not in model_candidates:
                         model_candidates.append(fb)
 
-                response = None
-                used_model = None
-                for m in model_candidates:
+                for k in candidate_keys:
+                    if parsed:
+                        break
                     try:
-                        cfg = types.GenerateContentConfig(response_mime_type="application/json")
-                        response = client.models.generate_content(
-                            model=m,
-                            contents=[part, prompt_instructions],
-                            config=cfg
-                        )
-                        if response and response.text:
-                            used_model = m
-                            break
-                    except Exception as merr:
-                        print(f"[-] Model {m} failed: {merr}")
+                        client = genai.Client(api_key=k)
+                        for m in model_candidates:
+                            try:
+                                cfg = types.GenerateContentConfig(response_mime_type="application/json")
+                                response = client.models.generate_content(
+                                    model=m,
+                                    contents=[part, prompt_instructions],
+                                    config=cfg
+                                )
+                                if response and response.text:
+                                    raw_text = response.text.strip()
+                                    raw_text = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
+                                    raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text)
+                                    raw_text = re.sub(r"\s*```$", "", raw_text).strip()
+                                    parsed = json.loads(raw_text)
+                                    used_model = m
+                                    break
+                            except Exception as merr:
+                                print(f"[-] Key ...{k[-6:]} Model {m} failed: {merr}")
+                    except Exception as kerr:
+                        print(f"[-] Client key ...{k[-6:]} error: {kerr}")
 
-                if not response or not response.text:
+                if not parsed:
                     raise ValueError("Không thể sinh phản hồi từ các mô hình Gemini.")
-
-                raw_text = response.text.strip()
-                raw_text = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
-                raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text)
-                raw_text = re.sub(r"\s*```$", "", raw_text).strip()
-                parsed = json.loads(raw_text)
 
                 if parsed.get("full_name"):
                     cleaned_name = clean_extracted_name(parsed["full_name"])

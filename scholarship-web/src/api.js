@@ -119,8 +119,8 @@ export async function extractCvProfile(file) {
   // Xác định thứ tự endpoints thông minh theo môi trường (Cloud HTTPS vs Localhost)
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
   const endpoints = isHttps
-    ? ['/api/cv/extract', '/api/v1/scholarships/extract-cv', `${API_BASE}/api/cv/extract`, `${API_BASE}/api/v1/scholarships/extract-cv`]
-    : ['/api/cv/extract', 'http://localhost:7782/api/cv/extract', '/api/v1/scholarships/extract-cv', `${API_BASE}/api/cv/extract`, `${API_BASE}/api/v1/scholarships/extract-cv`];
+    ? ['/api/cv/extract', '/api/v1/scholarships/extract-cv']
+    : ['/api/cv/extract', 'http://localhost:7782/api/cv/extract', '/api/v1/scholarships/extract-cv'];
 
   let lastError = null;
   for (const url of [...new Set(endpoints.filter(Boolean))]) {
@@ -130,7 +130,7 @@ export async function extractCvProfile(file) {
         method: 'POST',
         headers,
         body: formData,
-        signal: AbortSignal.timeout(35000),
+        signal: AbortSignal.timeout(45000),
       });
 
       if (res.ok) {

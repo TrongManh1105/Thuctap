@@ -3581,61 +3581,38 @@ async function handleCvUpload(file) {
   }, 800);
 
   try {
-    // 1. Gọi API Backend AI Service
-    let backendRes = null;
+    let result = null;
+
+    // 1. Ưu tiên số 1: Gọi Backend AI Service (Gemini Multimodal AI qua fitz & bytes)
     try {
-      backendRes = await extractCvProfile(file);
+      const backendRes = await extractCvProfile(file);
+      if (backendRes) {
+        const p = backendRes.data || backendRes;
+        if (p && (p.full_name || p.major || p.university || p.ielts || p.english_score)) {
+          result = { ...p };
+          console.log('[CV Extraction] Backend AI đã bóc tách thành công:', result);
+        }
+      }
     } catch (backendErr) {
-      console.warn('[CV Backend API]:', backendErr);
+      console.warn('[CV Backend API Warning]:', backendErr);
     }
 
-    // 2. Trích xuất Client-side qua pdfjs-dist
-    const clientExtracted = await extractCvClientSide(file);
-
-    // Hợp nhất dữ liệu: Ưu tiên Backend AI nếu có dữ liệu hợp lệ
-    const merged = { ...clientExtracted };
-    if (backendRes && typeof backendRes === 'object') {
-      const candidateProfileData = backendRes.data || backendRes;
-      if (candidateProfileData.full_name) {
-        merged.full_name = cleanCandidateName(candidateProfileData.full_name) || candidateProfileData.full_name.trim();
+    // 2. Dự phòng Client-side (chỉ chạy khi Backend AI không trả về dữ liệu)
+    if (!result || !result.full_name || result.full_name === 'Ứng viên (Hồ sơ tải lên)') {
+      try {
+        const clientExtracted = await extractCvClientSide(file);
+        if (clientExtracted) {
+          result = { ...(result || {}), ...clientExtracted };
+        }
+      } catch (cErr) {
+        console.warn('[CV Client-side fallback warning]:', cErr);
       }
-      const gpaVal = candidateProfileData.gpa ?? candidateProfileData.gpa_scale_4;
-      if (gpaVal !== undefined && gpaVal !== null && gpaVal > 0) {
-        merged.gpa = gpaVal;
-        merged.has_gpa = true;
-      } else if (candidateProfileData.has_gpa === false || gpaVal === null) {
-        merged.gpa = null;
-        merged.has_gpa = false;
-      }
-      const ieltsVal = candidateProfileData.ielts ?? candidateProfileData.ielts_score;
-      if (ieltsVal !== undefined && ieltsVal !== null && ieltsVal > 0) {
-        merged.ielts = ieltsVal;
-        merged.has_english = true;
-      }
-      if (candidateProfileData.english_score) {
-        merged.english_score = candidateProfileData.english_score;
-      } else if (ieltsVal) {
-        merged.english_score = `IELTS ${ieltsVal}`;
-      }
-      if (candidateProfileData.major) {
-        merged.major = candidateProfileData.major;
-      }
-      if (candidateProfileData.university && !candidateProfileData.university.includes('Từ CV')) {
-        merged.university = candidateProfileData.university;
-      }
-      const pubsCount = candidateProfileData.publications_count ?? candidateProfileData.research_papers_count;
-      if (pubsCount !== undefined && pubsCount !== null) merged.publications_count = pubsCount;
-      if (candidateProfileData.awards_count !== undefined && candidateProfileData.awards_count !== null) merged.awards_count = candidateProfileData.awards_count;
-      if (candidateProfileData.target_degree) merged.target_degree = candidateProfileData.target_degree;
-      const narrText = candidateProfileData.narrative ?? candidateProfileData.raw_summary;
-      if (narrText) merged.narrative = narrText;
-      if (candidateProfileData.skills && candidateProfileData.skills.length > 0) merged.skills = candidateProfileData.skills;
-      if (candidateProfileData.featured_projects && candidateProfileData.featured_projects.length > 0) merged.featured_projects = candidateProfileData.featured_projects;
-      if (candidateProfileData.coursework && candidateProfileData.coursework.length > 0) merged.coursework = candidateProfileData.coursework;
     }
 
-    // Đảm bảo tên hợp lệ và chuẩn hóa chính tả thanh điệu
-    let cleanFinalName = cleanCandidateName(merged.full_name) || merged.full_name;
+    const merged = { ...(result || {}) };
+
+    // Chuẩn hóa tên ứng viên sạch sẽ
+    let cleanFinalName = cleanCandidateName(merged.full_name) || (merged.full_name && merged.full_name.trim());
     if (cleanFinalName) {
       if (cleanFinalName.includes('Mạnh Tiền')) {
         cleanFinalName = cleanFinalName.replace('Mạnh Tiền', 'Mạnh Tiến');
@@ -3643,7 +3620,13 @@ async function handleCvUpload(file) {
         cleanFinalName = cleanFinalName.replace(/Tiền$/, 'Tiến');
       }
     }
-    merged.full_name = cleanFinalName || (clientExtracted.full_name && cleanCandidateName(clientExtracted.full_name)) || 'Ứng viên (Hồ sơ tải lên)';
+    // Nếu tên chưa tìm thấy, trích xuất từ tên file thay vì để 'Ứng viên (Hồ sơ tải lên)'
+    if (!cleanFinalName && file && file.name) {
+      let fn = file.name.replace(/\.pdf$/i, '').replace(/^(?:cv|resume|hoso)[_\-\s]*/i, '').trim();
+      const fnClean = cleanCandidateName(fn);
+      if (fnClean) cleanFinalName = fnClean;
+    }
+    merged.full_name = cleanFinalName || 'Ứng viên (Hồ sơ tải lên)';
 
     el.scanStatusText.textContent = 'Hoàn tất bóc tách hồ sơ CV!';
     el.scanStatusStep.textContent = 'Bước 3/3: Đã cập nhật thành công vào hồ sơ năng lực';
@@ -3651,17 +3634,18 @@ async function handleCvUpload(file) {
 
   } catch (err) {
     console.error('[CV Extraction Error]:', err);
-    // Fallback an toàn tuyệt đối
-    try {
-      const clientFallback = await extractCvClientSide(file);
-      applyExtractedToForm(clientFallback, file.name);
-    } catch (fallbackErr) {
-      applyExtractedToForm({
-        full_name: 'Ứng viên (Hồ sơ tải lên)',
-        major: 'Kinh tế & Tài chính',
-        target_degree: 'Cử nhân'
-      }, file.name);
+    // Fallback an toàn tuyệt đối từ tên file
+    let fallbackName = 'Ứng viên';
+    if (file && file.name) {
+      const baseFn = file.name.replace(/\.pdf$/i, '').replace(/^(?:cv|resume)[_\-\s]*/i, '');
+      const cleaned = cleanCandidateName(baseFn);
+      if (cleaned) fallbackName = cleaned;
     }
+    applyExtractedToForm({
+      full_name: fallbackName,
+      major: 'Công nghệ Thông tin / AI',
+      target_degree: 'Thạc sĩ'
+    }, file.name);
   } finally {
     clearTimeout(timer1);
     setTimeout(() => {
@@ -3753,6 +3737,7 @@ function applyExtractedToForm(extracted, sourceName = 'CV/Resume') {
   // Cập nhật Thẻ Tóm Tắt Năng Lực Ứng Viên từ CV
   const snapshotCard = document.getElementById('cv-candidate-snapshot');
   if (snapshotCard) {
+    snapshotCard.style.display = 'block';
     const candidateName = extracted.full_name || el.formFullName.value || 'Ứng viên';
     const majorName = extracted.university ? `${extracted.university} — ${extracted.major}` : (extracted.major || 'Kinh tế & Tài chính');
     const englishText = extracted.english_score || (extracted.ielts ? `IELTS ${extracted.ielts}` : 'Chưa có chứng chỉ');

@@ -22,12 +22,6 @@ def extract_clean_text_from_pdf(file_bytes: bytes) -> str:
         raise ValueError(f"Không thể đọc file PDF: {str(e)}")
 
     full_text = "\n\n".join(extracted_text)
-    if len(full_text.strip()) < 30:
-        raise ValueError(
-            "File PDF không chứa lớp ký tự (Text Layer). "
-            "Vui lòng không upload bản chụp ảnh/scan mà hãy dùng PDF xuất trực tiếp có text."
-        )
-
     # Loại bỏ ký tự điều khiển không in được và thu gọn khoảng trắng thừa
     # Giữ nguyên toàn bộ ký tự tiếng Việt Unicode (C0: 00-1f trừ \t \n \r; C1: 7f-9f)
     full_text = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f-\x9f]', '', full_text)
