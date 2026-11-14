@@ -395,6 +395,163 @@ def clean_pdf_blocks(file_bytes):
     full_text = re.sub(r'[ \t]+', ' ', full_text)
     return full_text
 
+def normalize_extracted_languages(parsed: dict, baseline_parsed: dict, cv_text: str = "") -> dict:
+    """
+    Chuẩn hóa và đồng bộ tuyệt đối kết quả bóc tách chứng chỉ ngoại ngữ giữa LLM AI và Regex Engine.
+    Đảm bảo:
+    - IELTS: Float 4.0 - 9.0 (hỗ trợ '6,5', 'Overall: 6.5', 'Band 7.0')
+    - TOEIC: Int 300 - 990, tự động quy đổi IELTS
+    - TOEFL, VSTEP, DET, Cambridge, TOPIK, JLPT, HSK: Đầy đủ nhãn và thang quy đổi
+    - has_english: True CHỈ KHI có chứng chỉ tiếng Anh thực tế
+    - english_score: Nhãn hiển thị chính xác (hoặc 'Chưa có chứng chỉ')
+    """
+    raw_ielts = parsed.get("ielts")
+    raw_toeic = parsed.get("toeic")
+    raw_eng_score = str(parsed.get("english_score") or "")
+    raw_cert_type = str(parsed.get("english_certificate_type") or "")
+    raw_score_str = str(parsed.get("english_score_raw") or "")
+    other_langs = list(parsed.get("other_languages") or [])
+
+    # Hợp nhất ngôn ngữ khác từ baseline nếu có
+    for ol in baseline_parsed.get("other_languages") or []:
+        if ol not in other_langs:
+            other_langs.append(ol)
+
+    found_ielts = None
+    found_toeic = None
+    found_toefl = None
+    found_vstep = None
+    found_det = None
+    found_cambridge = None
+
+    # 1. Trích xuất IELTS từ AI
+    if raw_ielts is not None and str(raw_ielts).strip() not in ("", "null", "None"):
+        try:
+            s = str(raw_ielts).replace(",", ".").strip()
+            m = re.search(r"([4-9](?:\.[05oO])?)", s)
+            if m:
+                val = float(m.group(1).replace("o", "0").replace("O", "0"))
+                if 4.0 <= val <= 9.0:
+                    found_ielts = val
+        except Exception:
+            pass
+
+    # 2. Trích xuất TOEIC từ AI
+    if raw_toeic is not None and str(raw_toeic).strip() not in ("", "null", "None"):
+        try:
+            s = str(raw_toeic).strip()
+            m = re.search(r"([3-9]\d{2})", s)
+            if m:
+                t_val = int(m.group(1))
+                if 300 <= t_val <= 990:
+                    found_toeic = t_val
+        except Exception:
+            pass
+
+    # 3. Quét kiểm tra TOEFL / VSTEP / DET / Cambridge từ chuỗi nhãn của AI
+    combined_probe = f"{raw_eng_score} {raw_cert_type} {raw_score_str}"
+    if "toefl" in combined_probe.lower():
+        m = re.search(r"(\d{2,3})", combined_probe)
+        if m and 30 <= int(m.group(1)) <= 120:
+            found_toefl = int(m.group(1))
+    if "vstep" in combined_probe.lower():
+        m = re.search(r"(B1|B2|C1|C2|[5-9](?:\.\d)?)", combined_probe, re.IGNORECASE)
+        if m:
+            found_vstep = m.group(1).upper()
+    if any(k in combined_probe.lower() for k in ["duolingo", "det"]):
+        m = re.search(r"(\d{2,3})", combined_probe)
+        if m and 60 <= int(m.group(1)) <= 160:
+            found_det = int(m.group(1))
+    if "cambridge" in combined_probe.lower():
+        m = re.search(r"(C2|C1|B2|B1|Proficiency|Advanced|First|Preliminary)", combined_probe, re.IGNORECASE)
+        if m:
+            found_cambridge = m.group(1)
+
+    # 4. Fallback sang baseline_parsed nếu AI không tìm thấy chứng chỉ tiếng Anh
+    if not any([found_ielts, found_toeic, found_toefl, found_vstep, found_det, found_cambridge]):
+        if baseline_parsed.get("has_english"):
+            found_ielts = baseline_parsed.get("ielts")
+            found_toeic = baseline_parsed.get("toeic")
+            found_toefl = baseline_parsed.get("toefl")
+            found_vstep = baseline_parsed.get("vstep")
+            found_det = baseline_parsed.get("det")
+            found_cambridge = baseline_parsed.get("cambridge")
+
+    # 5. Quy đổi thang IELTS tương đương và tạo nhãn hiển thị chính xác
+    effective_ielts = None
+    labels = []
+
+    has_ielts_in_cv = bool(re.search(r"\bIELTS\b", cv_text, re.IGNORECASE))
+    has_toeic_in_cv = bool(re.search(r"\bTOEIC\b", cv_text, re.IGNORECASE))
+    has_toefl_in_cv = bool(re.search(r"\bTOEFL\b", cv_text, re.IGNORECASE))
+    has_vstep_in_cv = bool(re.search(r"\bVSTEP\b", cv_text, re.IGNORECASE))
+    has_det_in_cv = bool(re.search(r"\b(?:Duolingo|DET)\b", cv_text, re.IGNORECASE))
+
+    # Nếu ứng viên thi TOEIC (trong CV có chữ TOEIC hoặc AI nhận diện TOEIC và không có IELTS thực tế)
+    if found_toeic and (has_toeic_in_cv or not has_ielts_in_cv):
+        if found_toeic >= 900: effective_ielts = 8.0
+        elif found_toeic >= 850: effective_ielts = 7.5
+        elif found_toeic >= 785: effective_ielts = 7.0
+        elif found_toeic >= 650: effective_ielts = 6.5
+        elif found_toeic >= 550: effective_ielts = 6.0
+        elif found_toeic >= 450: effective_ielts = 5.5
+        else: effective_ielts = 5.0
+        labels.append(f"TOEIC {found_toeic} (Quy đổi IELTS {effective_ielts})")
+    elif found_toefl and (has_toefl_in_cv or not has_ielts_in_cv):
+        if found_toefl >= 102: effective_ielts = 7.5
+        elif found_toefl >= 94: effective_ielts = 7.0
+        elif found_toefl >= 79: effective_ielts = 6.5
+        elif found_toefl >= 60: effective_ielts = 6.0
+        elif found_toefl >= 46: effective_ielts = 5.5
+        else: effective_ielts = 5.0
+        labels.append(f"TOEFL iBT {found_toefl} (Quy đổi IELTS {effective_ielts})")
+    elif found_vstep and (has_vstep_in_cv or not has_ielts_in_cv):
+        if "C2" in found_vstep: effective_ielts = 8.0
+        elif "C1" in found_vstep: effective_ielts = 7.5
+        elif "B2" in found_vstep: effective_ielts = 6.0
+        elif "B1" in found_vstep: effective_ielts = 5.0
+        else:
+            try:
+                v_num = float(found_vstep.replace(",", "."))
+                effective_ielts = 7.5 if v_num >= 8.5 else (7.0 if v_num >= 8.0 else (6.5 if v_num >= 7.0 else (6.0 if v_num >= 6.0 else 5.5)))
+            except Exception:
+                effective_ielts = 6.0
+        labels.append(f"VSTEP {found_vstep} (Quy đổi IELTS {effective_ielts})")
+    elif found_det and (has_det_in_cv or not has_ielts_in_cv):
+        if found_det >= 135: effective_ielts = 8.0
+        elif found_det >= 120: effective_ielts = 7.5
+        elif found_det >= 105: effective_ielts = 7.0
+        elif found_det >= 90: effective_ielts = 6.5
+        elif found_det >= 80: effective_ielts = 6.0
+        else: effective_ielts = 5.5
+        labels.append(f"Duolingo DET {found_det} (Quy đổi IELTS {effective_ielts})")
+    elif found_cambridge and not has_ielts_in_cv:
+        c_upper = str(found_cambridge).upper()
+        if "C2" in c_upper or "PROFICIENCY" in c_upper: effective_ielts = 8.5
+        elif "C1" in c_upper or "ADVANCED" in c_upper: effective_ielts = 7.5
+        elif "B2" in c_upper or "FIRST" in c_upper: effective_ielts = 6.0
+        elif "B1" in c_upper or "PRELIMINARY" in c_upper: effective_ielts = 5.0
+        labels.append(f"Cambridge {found_cambridge} (Quy đổi IELTS {effective_ielts})")
+    elif found_ielts is not None:
+        effective_ielts = found_ielts
+        labels.append(f"IELTS {found_ielts}")
+
+    has_english = bool(effective_ielts is not None)
+
+    if other_langs:
+        labels.extend(other_langs)
+
+    display_label = " • ".join(labels) if labels else "Chưa có chứng chỉ"
+
+    return {
+        "ielts": effective_ielts,
+        "ielts_score": effective_ielts,
+        "toeic": found_toeic,
+        "has_english": has_english,
+        "english_score": display_label,
+        "other_languages": other_langs
+    }
+
 @app.route("/api/v1/scholarships/extract-cv", methods=["POST", "OPTIONS"])
 @app.route("/api/cv/extract", methods=["POST", "OPTIONS"])
 def extract_cv_v1():
@@ -463,8 +620,13 @@ Nhiệm vụ: Đọc kỹ tài liệu PDF CV đính kèm (hỗ trợ mọi đị
   "target_degree": "Bậc học mục tiêu (Cử nhân, Thạc sĩ, Tiến sĩ)",
   "current_degree": "Bậc học hiện tại (Cử nhân, Thạc sĩ, Tiến sĩ)",
   "gpa": float hoặc null (Quy đổi về hệ 4.0 nếu hệ 10; nếu không có GPA thì để null, tuyệt đối không bịa),
-  "ielts": float hoặc null (Điểm IELTS nếu có),
-  "toeic": int hoặc null,
+  "has_english": bool (true nếu ứng viên có chứng chỉ hoặc điểm tiếng Anh như IELTS, TOEIC, TOEFL, VSTEP, Duolingo DET, Cambridge; false nếu hoàn toàn không có),
+  "english_certificate_type": "IELTS" | "TOEIC" | "TOEFL" | "VSTEP" | "Duolingo" | "Cambridge" | null,
+  "english_score_raw": "Chuỗi điểm gốc trong CV (ví dụ: '6.5', 'Overall 7.0', '800/990', '95 iBT', 'B2') hoặc null",
+  "ielts": float hoặc null (Điểm IELTS Overall thực tế HOẶC điểm quy đổi về thang IELTS 4.0 - 9.0; nếu CV không có chứng chỉ thì bắt buộc null),
+  "toeic": int hoặc null (Điểm TOEIC nguyên bản từ 300 - 990 nếu có),
+  "english_score": "Chuỗi hiển thị đầy đủ (ví dụ: 'IELTS 6.5', 'TOEIC 850 (Quy đổi IELTS 7.5)', 'TOEFL iBT 95 (Quy đổi IELTS 7.0)', 'VSTEP B2 (Quy đổi IELTS 6.0)', hoặc 'Chưa có chứng chỉ')",
+  "other_languages": ["TOPIK 4", "JLPT N2", etc. nếu có trong CV],
   "publications_count": int (Số bài báo khoa học đã xuất bản, nếu không có để 0),
   "awards_count": int (Số giải thưởng NCKH/học thuật, nếu không có để 0),
   "work_experience_years": float,
@@ -481,8 +643,14 @@ NỘI DUNG VĂN BẢN TRÍCH XUẤT ĐƯỢC:
 QUY TẮC BẮT BUỘC:
 1. Đọc đúng Họ và Tên ứng viên từ đầu trang CV (không nhầm với tên trường/ngành).
 2. GPA: Nếu trong CV không có điểm GPA thì để null, không được đoán mò.
-3. Bài báo: Bài tập lớn, đồ án sinh viên không phải là bài báo xuất bản (publications_count = 0).
-4. Chỉ xuất JSON thuần túy, không có markdown codeblock hoặc lời giải thích."""
+3. CHỨNG CHỈ NGOẠI NGỮ:
+   - Đọc kỹ toàn bộ CV (mục Ngoại ngữ, Kỹ năng, Chứng chỉ, Hoạt động).
+   - Nếu có IELTS: Lấy điểm Overall (ví dụ Overall: 6.5 thì ielts = 6.5, không nhầm với điểm từng kỹ năng).
+   - Nếu có TOEIC: Ghi rõ điểm toeic (ví dụ 800) và quy đổi sang thang ielts tương đương.
+   - Nếu có TOEFL / VSTEP / Duolingo DET / Cambridge: Ghi rõ loại chứng chỉ và quy đổi tương đương.
+   - Nếu CV HOÀN TOÀN KHÔNG CÓ chứng chỉ tiếng Anh: Đặt has_english = false, ielts = null, toeic = null, english_score = 'Chưa có chứng chỉ'. Tuyệt đối không bịa điểm nếu CV không nhắc tới.
+4. Bài báo: Bài tập lớn, đồ án sinh viên không phải là bài báo xuất bản (publications_count = 0).
+5. Chỉ xuất JSON thuần túy, không có markdown codeblock hoặc lời giải thích."""
 
                 # Cascade models: Ưu tiên gemini-3.5-flash-lite, sau đó fallback gemini-3.1-flash-lite, gemini-3.5-flash
                 raw_models = [
@@ -557,19 +725,14 @@ QUY TẮC BẮT BUỘC:
                         parsed["gpa"] = baseline_parsed.get("gpa")
                 parsed["has_gpa"] = parsed.get("gpa") is not None
 
-                if parsed.get("ielts") is not None:
-                    try:
-                        ielts_val = float(parsed["ielts"])
-                        if 4.0 <= ielts_val <= 9.0:
-                            parsed["ielts"] = ielts_val
-                            parsed["has_english"] = True
-                            parsed["english_score"] = f"IELTS {ielts_val}"
-                    except Exception:
-                        pass
-                if not parsed.get("english_score") and baseline_parsed.get("english_score"):
-                    parsed["english_score"] = baseline_parsed.get("english_score")
-                    parsed["ielts"] = parsed.get("ielts") or baseline_parsed.get("ielts")
-                    parsed["has_english"] = baseline_parsed.get("has_english", False)
+                # Đồng bộ và chuẩn hóa toàn diện chứng chỉ ngoại ngữ
+                lang_data = normalize_extracted_languages(parsed, baseline_parsed, cv_text)
+                parsed["ielts"] = lang_data["ielts"]
+                parsed["ielts_score"] = lang_data["ielts_score"]
+                parsed["toeic"] = lang_data["toeic"]
+                parsed["has_english"] = lang_data["has_english"]
+                parsed["english_score"] = lang_data["english_score"]
+                parsed["other_languages"] = lang_data["other_languages"]
 
                 if parsed.get("major"):
                     parsed["major"] = classify_major(parsed["major"])
@@ -578,9 +741,16 @@ QUY TẮC BẮT BUỘC:
                     if k not in parsed or parsed[k] is None:
                         parsed[k] = v
 
+                # Đảm bảo các trường ngoại ngữ không bị baseline ghi đè ngược sai
+                parsed["ielts"] = lang_data["ielts"]
+                parsed["ielts_score"] = lang_data["ielts_score"]
+                parsed["toeic"] = lang_data["toeic"]
+                parsed["has_english"] = lang_data["has_english"]
+                parsed["english_score"] = lang_data["english_score"]
+                parsed["other_languages"] = lang_data["other_languages"]
+
                 parsed["gpa_scale_4"] = parsed.get("gpa")
                 parsed["gpa_raw"] = str(parsed.get("gpa")) if parsed.get("gpa") else None
-                parsed["ielts_score"] = parsed.get("ielts")
                 parsed["research_papers_count"] = parsed.get("publications_count", 0)
                 parsed["raw_summary"] = parsed.get("narrative") or parsed.get("work_experience") or ""
                 parsed["extraction_engine"] = f"Gemini Multimodal AI ({used_model})"

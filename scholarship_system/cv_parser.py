@@ -350,96 +350,208 @@ def extract_gpa_robust(text: str) -> Optional[float]:
 
 
 def extract_language_robust(text: str) -> Dict[str, Any]:
-    """Bóc tách chứng chỉ ngoại ngữ: IELTS, TOEIC, TOEFL, VSTEP, Duolingo DET..."""
+    """
+    Bóc tách chứng chỉ ngoại ngữ siêu chuẩn xác:
+    - IELTS: Bắt Overall (kể cả khi CV liệt kê 4 kỹ năng L, R, W, S), định dạng phẩy '6,5', 'Overall: 6.5', 'IELTS (Academic) 7.0', 'Band 7.5 IELTS'
+    - TOEIC: 300 - 990 (kể cả TOEIC (L&R), 4 kỹ năng, điểm số), quy đổi thang IELTS chuẩn
+    - TOEFL: iBT 30 - 120, quy đổi thang IELTS
+    - VSTEP: B1, B2, C1, C2 hoặc điểm số hệ 10, quy đổi thang IELTS
+    - Duolingo DET: 60 - 160, quy đổi thang IELTS
+    - Cambridge: PET, FCE, CAE, CPE, B1, B2, C1, C2
+    - Ngôn ngữ Châu Á: TOPIK (Hàn), JLPT (Nhật), HSK (Trung)
+    - Nhận diện trung thực tuyệt đối: Nếu CV không có chứng chỉ, trả về has_english=False và english_score='Chưa có chứng chỉ'
+    """
     ielts = None
     toeic = None
+    toefl = None
+    vstep = None
+    det = None
+    cambridge = None
+    other_langs = []
 
-    # IELTS
-    ielts_m = re.search(
-        r"(?:\bIELTS\b|Dat\s*IELTS|Chứng\s*chỉ\s*IELTS|Chung\s*chi\s*IELTS|Điểm\s*IELTS|Diem\s*IELTS)\s*(?:Academic|General|Overall|Band)?\s*[:=\s-]?\s*([4-9](?:[.,][05oO])?)\b",
+    # 1. IELTS - Ưu tiên điểm Overall nếu có
+    m_overall = re.search(
+        r"(?:Overall\s*(?:Band|Score)?|Band\s*Score|Điểm\s*Overall)\s*[:=\s-]?\s*([4-9](?:[.,][05oO])?)\b",
         text,
         re.IGNORECASE,
     )
-    if not ielts_m:
-        ielts_m = re.search(r"\b([4-9](?:[.,][05oO])?)\s*(?:Band\s*)?IELTS\b", text, re.IGNORECASE)
-    if ielts_m:
+    if m_overall:
         try:
-            val_str = ielts_m.group(1).replace("o", "0").replace("O", "0").replace(",", ".")
-            val = float(val_str)
+            val = float(m_overall.group(1).replace("o", "0").replace("O", "0").replace(",", "."))
             if 4.0 <= val <= 9.0:
                 ielts = val
         except Exception:
             pass
 
-    # TOEIC
-    toeic_m = re.search(r"\bTOEIC\b\s*(?:Listening\s*&?\s*Reading)?\s*[:=\s-]?\s*([3-9]\d{2})\b", text, re.IGNORECASE)
-    if not toeic_m:
-        toeic_m = re.search(r"\b([3-9]\d{2})\s*(?:\/\s*990)?\s*TOEIC\b", text, re.IGNORECASE)
-    if toeic_m:
+    if not ielts:
+        # Bắt IELTS theo sau bởi điểm (hỗ trợ ngoặc đơn, chữ viết tắt, xuống dòng)
+        m_ielts = re.search(
+            r"\bIELTS\b(?:[^\d]|(?:\b(?:Band|Score|Academic|General|Overall|TRF|Thi)\b)){0,40}?([4-9](?:[.,][05oO])?)\s*(?:\/\s*9(?:\.0)?)?\b",
+            text,
+            re.IGNORECASE,
+        )
+        if m_ielts:
+            try:
+                val = float(m_ielts.group(1).replace("o", "0").replace("O", "0").replace(",", "."))
+                if 4.0 <= val <= 9.0:
+                    ielts = val
+            except Exception:
+                pass
+
+    if not ielts:
+        # Bắt điểm đứng trước chữ IELTS: 6.5 IELTS, Band 7.0 IELTS, 7.0 (IELTS)
+        m_ielts_rev = re.search(
+            r"\b([4-9](?:[.,][05oO])?)\s*(?:\/\s*9(?:\.0)?)?\s*(?:Band\s*)?(?:\([^\)]*IELTS[^\)]*|\bIELTS\b)",
+            text,
+            re.IGNORECASE,
+        )
+        if m_ielts_rev:
+            try:
+                val = float(m_ielts_rev.group(1).replace("o", "0").replace("O", "0").replace(",", "."))
+                if 4.0 <= val <= 9.0:
+                    ielts = val
+            except Exception:
+                pass
+
+    # 2. TOEIC
+    m_toeic = re.search(
+        r"\bTOEIC\b(?:[^\d]|(?:\b[24]\s*(?:kỹ\s*năng|skills|ky\s*nang)\b)){0,40}?([3-9]\d{2})\s*(?:\/\s*990)?\b",
+        text,
+        re.IGNORECASE,
+    )
+    if m_toeic:
         try:
-            t_val = int(toeic_m.group(1))
+            t_val = int(m_toeic.group(1))
             if 300 <= t_val <= 990:
                 toeic = t_val
         except Exception:
             pass
+    if not toeic:
+        m_toeic_rev = re.search(
+            r"\b([3-9]\d{2})\s*(?:\/\s*990)?\s*(?:\([^\)]*TOEIC[^\)]*|\bTOEIC\b)",
+            text,
+            re.IGNORECASE,
+        )
+        if m_toeic_rev:
+            try:
+                t_val = int(m_toeic_rev.group(1))
+                if 300 <= t_val <= 990:
+                    toeic = t_val
+            except Exception:
+                pass
 
-    # TOEFL
-    toefl_m = re.search(r"\bTOEFL\b\s*(?:iBT)?\s*[:=\s-]?\s*(\d{2,3})\b", text, re.IGNORECASE)
-    if toefl_m and not ielts:
+    # 3. TOEFL
+    m_toefl = re.search(r"\bTOEFL\b[^\d]{0,25}?(\d{2,3})\s*(?:\/\s*120)?\b", text, re.IGNORECASE)
+    if m_toefl:
         try:
-            tf = int(toefl_m.group(1))
-            if tf >= 102: ielts = 7.5
-            elif tf >= 94: ielts = 7.0
-            elif tf >= 79: ielts = 6.5
-            elif tf >= 60: ielts = 6.0
-            elif tf >= 46: ielts = 5.5
+            tf_val = int(m_toefl.group(1))
+            if 30 <= tf_val <= 120:
+                toefl = tf_val
         except Exception:
             pass
 
-    # VSTEP
-    vstep_m = re.search(r"\bVSTEP\b\s*[:=\s-]?\s*(B1|B2|C1|C2|[5-9](?:[.,]\d)?)\b", text, re.IGNORECASE)
-    if vstep_m and not ielts:
-        level = vstep_m.group(1).upper()
-        if "C2" in level: ielts = 8.0
-        elif "C1" in level: ielts = 7.5
-        elif "B2" in level: ielts = 6.0
-        elif "B1" in level: ielts = 5.0
+    # 4. VSTEP
+    m_vstep = re.search(r"\bVSTEP\b[^\w]{0,15}?(B1|B2|C1|C2|[5-9](?:[.,]\d)?)\b", text, re.IGNORECASE)
+    if m_vstep:
+        vstep = m_vstep.group(1).upper()
 
-    # Duolingo DET
-    det_m = re.search(r"\b(?:Duolingo|DET)\b\s*(?:English\s*Test)?\s*[:=\s-]?\s*(\d{2,3})\b", text, re.IGNORECASE)
-    if det_m and not ielts:
+    # 5. Duolingo DET
+    m_det = re.search(r"\b(?:Duolingo|DET)\b[^\d]{0,25}?(\d{2,3})\s*(?:\/\s*160)?\b", text, re.IGNORECASE)
+    if m_det:
         try:
-            det = int(det_m.group(1))
-            if det >= 135: ielts = 8.0
-            elif det >= 120: ielts = 7.5
-            elif det >= 105: ielts = 7.0
-            elif det >= 90: ielts = 6.5
-            elif det >= 80: ielts = 6.0
+            det_val = int(m_det.group(1))
+            if 60 <= det_val <= 160:
+                det = det_val
         except Exception:
             pass
 
-    has_cert = (ielts is not None) or (toeic is not None)
-    effective_ielts = ielts
-    if not effective_ielts and toeic:
+    # 6. Cambridge
+    m_cam = re.search(
+        r"\b(?:Cambridge|FCE|CAE|CPE|PET)\b[^\w]{0,25}?(C2|C1|B2|B1|Proficiency|Advanced|First|Preliminary)\b",
+        text,
+        re.IGNORECASE,
+    )
+    if m_cam:
+        cambridge = m_cam.group(1)
+
+    # 7. Ngôn ngữ Châu Á (TOPIK, JLPT, HSK)
+    m_topik = re.search(r"\bTOPIK\s*(?:I|II)?\s*(?:level|cấp|cap)?\s*([1-6])\b", text, re.IGNORECASE)
+    if m_topik:
+        other_langs.append(f"TOPIK {m_topik.group(1)}")
+    m_jlpt = re.search(r"\bJLPT\s*(N[1-5])\b", text, re.IGNORECASE)
+    if m_jlpt:
+        other_langs.append(f"JLPT {m_jlpt.group(1).upper()}")
+    m_hsk = re.search(r"\bHSK\s*([1-6])\b", text, re.IGNORECASE)
+    if m_hsk:
+        other_langs.append(f"HSK {m_hsk.group(1)}")
+
+    # Quy đổi điểm sang thang IELTS tương đương cho hệ thống đối soát học bổng
+    effective_ielts = None
+    eng_labels = []
+
+    if ielts is not None:
+        effective_ielts = ielts
+        eng_labels.append(f"IELTS {ielts}")
+    elif toeic is not None:
         if toeic >= 900: effective_ielts = 8.0
         elif toeic >= 850: effective_ielts = 7.5
         elif toeic >= 785: effective_ielts = 7.0
         elif toeic >= 650: effective_ielts = 6.5
         elif toeic >= 550: effective_ielts = 6.0
+        elif toeic >= 450: effective_ielts = 5.5
+        else: effective_ielts = 5.0
+        eng_labels.append(f"TOEIC {toeic} (Quy đổi IELTS {effective_ielts})")
+    elif toefl is not None:
+        if toefl >= 102: effective_ielts = 7.5
+        elif toefl >= 94: effective_ielts = 7.0
+        elif toefl >= 79: effective_ielts = 6.5
+        elif toefl >= 60: effective_ielts = 6.0
+        elif toefl >= 46: effective_ielts = 5.5
+        else: effective_ielts = 5.0
+        eng_labels.append(f"TOEFL iBT {toefl} (Quy đổi IELTS {effective_ielts})")
+    elif vstep is not None:
+        if "C2" in vstep: effective_ielts = 8.0
+        elif "C1" in vstep: effective_ielts = 7.5
+        elif "B2" in vstep: effective_ielts = 6.0
+        elif "B1" in vstep: effective_ielts = 5.0
+        else:
+            try:
+                v_num = float(vstep.replace(",", "."))
+                effective_ielts = 7.5 if v_num >= 8.5 else (7.0 if v_num >= 8.0 else (6.5 if v_num >= 7.0 else (6.0 if v_num >= 6.0 else 5.5)))
+            except Exception:
+                effective_ielts = 6.0
+        eng_labels.append(f"VSTEP {vstep} (Quy đổi IELTS {effective_ielts})")
+    elif det is not None:
+        if det >= 135: effective_ielts = 8.0
+        elif det >= 120: effective_ielts = 7.5
+        elif det >= 105: effective_ielts = 7.0
+        elif det >= 90: effective_ielts = 6.5
+        elif det >= 80: effective_ielts = 6.0
         else: effective_ielts = 5.5
+        eng_labels.append(f"Duolingo DET {det} (Quy đổi IELTS {effective_ielts})")
+    elif cambridge is not None:
+        c_upper = cambridge.upper()
+        if "C2" in c_upper or "PROFICIENCY" in c_upper: effective_ielts = 8.5
+        elif "C1" in c_upper or "ADVANCED" in c_upper: effective_ielts = 7.5
+        elif "B2" in c_upper or "FIRST" in c_upper: effective_ielts = 6.0
+        elif "B1" in c_upper or "PRELIMINARY" in c_upper: effective_ielts = 5.0
+        eng_labels.append(f"Cambridge {cambridge} (Quy đổi IELTS {effective_ielts})")
 
-    if ielts:
-        eng_label = f"IELTS {ielts}"
-    elif toeic:
-        eng_label = f"TOEIC {toeic} (Quy đổi IELTS {effective_ielts})"
-    else:
-        eng_label = "Chưa có chứng chỉ"
+    has_cert = bool(effective_ielts is not None)
+
+    if other_langs:
+        eng_labels.extend(other_langs)
+
+    display_label = " • ".join(eng_labels) if eng_labels else "Chưa có chứng chỉ"
 
     return {
         "ielts": effective_ielts,
         "toeic": toeic,
+        "toefl": toefl,
+        "vstep": vstep,
         "has_english": has_cert,
-        "english_score": eng_label,
+        "english_score": display_label,
+        "other_languages": other_langs,
     }
 
 
@@ -787,9 +899,11 @@ def parse_full_cv(
         "gpa": gpa,
         "has_gpa": (gpa is not None),
         "ielts": lang_info["ielts"],
+        "ielts_score": lang_info["ielts"],
         "has_english": lang_info["has_english"],
         "toeic": lang_info["toeic"],
         "english_score": lang_info["english_score"],
+        "other_languages": lang_info.get("other_languages", []),
         "publications_count": pubs_count,
         "awards_count": awards_count,
         "skills": summary_info["skills"],

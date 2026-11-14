@@ -10,7 +10,9 @@ class ExtractedCandidateProfile(BaseModel):
     gpa_scale_4: Optional[float] = Field(None, description="Điểm GPA quy đổi về thang 4.0")
     gpa_raw: Optional[str] = Field(None, description="Điểm GPA nguyên bản trong CV")
     ielts_score: Optional[float] = Field(None, description="Điểm IELTS nếu có")
+    toeic: Optional[int] = Field(None, description="Điểm TOEIC nếu có")
     topik_level: Optional[int] = Field(None, description="Cấp độ TOPIK nếu có")
+    other_languages: List[str] = Field(default_factory=list, description="Các ngôn ngữ khác")
     research_papers_count: int = Field(0, description="Số bài báo nghiên cứu")
     awards_count: int = Field(0, description="Số giải thưởng học thuật/cuộc thi")
     target_countries: List[str] = Field(default_factory=list, description="Quốc gia mong muốn")
@@ -59,15 +61,38 @@ class ExtractedCandidateProfile(BaseModel):
             self.gpa_scale_4 = self.gpa
         self.has_gpa = bool(self.gpa_scale_4 is not None and self.gpa_scale_4 > 0)
 
-        # Đồng bộ ielts và ielts_score
+        # Đồng bộ ielts, toeic và english_score
         if self.ielts is None and self.ielts_score is not None:
             self.ielts = self.ielts_score
         elif self.ielts_score is None and self.ielts is not None:
             self.ielts_score = self.ielts
-        if self.ielts_score is not None and self.ielts_score > 0:
-            self.has_english = True
+
+        if self.ielts_score is None and self.toeic is not None:
+            t = self.toeic
+            if t >= 900: eq = 8.0
+            elif t >= 850: eq = 7.5
+            elif t >= 785: eq = 7.0
+            elif t >= 650: eq = 6.5
+            elif t >= 550: eq = 6.0
+            elif t >= 450: eq = 5.5
+            else: eq = 5.0
+            self.ielts = eq
+            self.ielts_score = eq
             if not self.english_score:
-                self.english_score = f"IELTS {self.ielts_score}"
+                self.english_score = f"TOEIC {t} (Quy đổi IELTS {eq})"
+
+        has_cert = bool(self.ielts_score is not None and self.ielts_score >= 4.0)
+        if self.english_score and ("chưa có" in self.english_score.lower() or "none" in self.english_score.lower()):
+            has_cert = False
+            self.ielts = None
+            self.ielts_score = None
+            self.english_score = "Chưa có chứng chỉ"
+
+        self.has_english = has_cert
+        if self.has_english and not self.english_score:
+            self.english_score = f"IELTS {self.ielts_score}"
+        elif not self.has_english and not self.english_score:
+            self.english_score = "Chưa có chứng chỉ"
 
         # Đồng bộ publications_count và research_papers_count
         if (self.publications_count is None or self.publications_count == 0) and self.research_papers_count > 0:

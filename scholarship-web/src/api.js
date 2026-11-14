@@ -140,16 +140,42 @@ export async function extractCvProfile(file) {
           throw new Error(rawData.error || 'Trích xuất CV thất bại.');
         }
         const data = (rawData && rawData.data) ? rawData.data : rawData;
-        // Chuẩn hóa đồng bộ 2 chiều
+        // Chuẩn hóa đồng bộ 2 chiều GPA
         data.gpa = data.gpa ?? data.gpa_scale_4;
         data.gpa_scale_4 = data.gpa_scale_4 ?? data.gpa;
         data.has_gpa = Boolean(data.gpa !== undefined && data.gpa !== null && data.gpa > 0);
-        data.ielts = data.ielts ?? data.ielts_score;
-        data.ielts_score = data.ielts_score ?? data.ielts;
-        if (data.ielts && !data.english_score) {
-          data.english_score = `IELTS ${data.ielts}`;
+
+        // Chuẩn hóa đồng bộ 2 chiều Ngoại ngữ
+        let parsedIelts = null;
+        if (data.ielts !== undefined && data.ielts !== null && String(data.ielts).trim() !== '' && String(data.ielts).trim() !== 'null') {
+          const v = parseFloat(String(data.ielts).replace(',', '.'));
+          if (!isNaN(v) && v >= 4.0 && v <= 9.0) parsedIelts = v;
+        } else if (data.ielts_score !== undefined && data.ielts_score !== null && String(data.ielts_score).trim() !== '' && String(data.ielts_score).trim() !== 'null') {
+          const v = parseFloat(String(data.ielts_score).replace(',', '.'));
+          if (!isNaN(v) && v >= 4.0 && v <= 9.0) parsedIelts = v;
         }
-        data.has_english = Boolean(data.ielts || data.has_english);
+        data.ielts = parsedIelts;
+        data.ielts_score = parsedIelts;
+
+        const rawEngScore = String(data.english_score || '').trim();
+        const isExplicitNoCert = rawEngScore.toLowerCase().includes('chưa có') || rawEngScore.toLowerCase().includes('none');
+
+        if (isExplicitNoCert) {
+          data.has_english = false;
+          data.ielts = null;
+          data.ielts_score = null;
+          data.english_score = 'Chưa có chứng chỉ';
+        } else if (data.ielts) {
+          data.has_english = true;
+          if (!data.english_score) {
+            data.english_score = `IELTS ${data.ielts}`;
+          }
+        } else if (data.has_english && rawEngScore) {
+          data.has_english = true;
+        } else {
+          data.has_english = false;
+          data.english_score = 'Chưa có chứng chỉ';
+        }
         data.publications_count = data.publications_count ?? data.research_papers_count ?? 0;
         data.research_papers_count = data.research_papers_count ?? data.publications_count;
         data.narrative = data.narrative ?? data.raw_summary;

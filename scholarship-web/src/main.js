@@ -784,7 +784,14 @@ function updateSliderBadges() {
   let ieltsGlow = 'rgba(37, 99, 235, 0.4)';
   let ieltsGlowSubtle = 'rgba(37, 99, 235, 0.2)';
 
-  if (ielts >= 8.0) {
+  if (state.cvEnglishMissing) {
+    el.badgeIelts.textContent = 'Chưa có CC';
+    el.badgeIelts.style.color = '#F59E0B';
+    el.badgeIelts.style.background = 'rgba(245, 158, 11, 0.15)';
+    ieltsColor = '#F59E0B';
+    ieltsGlow = 'rgba(245, 158, 11, 0.45)';
+    ieltsGlowSubtle = 'rgba(245, 158, 11, 0.22)';
+  } else if (ielts >= 8.0) {
     el.badgeIelts.textContent = 'C2 Vượt trội';
     el.badgeIelts.style.color = '#10B981';
     el.badgeIelts.style.background = 'rgba(16, 185, 129, 0.15)';
@@ -3381,64 +3388,129 @@ async function extractCvClientSide(file) {
     }
   }
 
-  // 4. Bóc tách Chứng chỉ Ngoại ngữ (IELTS / TOEIC / TOEFL / VSTEP / DET)
-  const ieltsMatch = fullText.match(/(?:\bIELTS\b|Dat\s*IELTS|Chứng\s*chỉ\s*IELTS|Điểm\s*IELTS)\s*(?:Academic|General|Overall|Band)?\s*[:=\s-]?\s*([4-9](?:[.,][05oO])?)\b/i) ||
-                     fullText.match(/\b([4-9](?:[.,][05oO])?)\s*(?:Band\s*)?IELTS\b/i);
-  if (ieltsMatch && ieltsMatch[1]) {
-    const val = parseFloat(ieltsMatch[1].replace(/[oO]/g, '0').replace(',', '.'));
+  // 4. Bóc tách Chứng chỉ Ngoại ngữ đa chuẩn (IELTS / TOEIC / TOEFL / VSTEP / DET / Cambridge / Ngôn ngữ Châu Á)
+  detectedIelts = null;
+  detectedToeic = null;
+  let detectedToefl = null;
+  let detectedVstep = null;
+  let detectedDet = null;
+  let detectedCambridge = null;
+  const otherLanguages = [];
+
+  // 1. IELTS - Ưu tiên Overall trước
+  const ieltsOverallMatch = fullText.match(/(?:Overall\s*(?:Band|Score)?|Band\s*Score|Điểm\s*Overall)\s*[:=\s-]?\s*([4-9](?:[.,][05oO])?)\b/i);
+  if (ieltsOverallMatch && ieltsOverallMatch[1]) {
+    const val = parseFloat(ieltsOverallMatch[1].replace(/[oO]/g, '0').replace(',', '.'));
     if (!isNaN(val) && val >= 4.0 && val <= 9.0) detectedIelts = val;
   }
+  if (!detectedIelts) {
+    const ieltsMatch = fullText.match(/\bIELTS\b(?:[^\d]|(?:\b(?:Band|Score|Academic|General|Overall|TRF|Thi)\b)){0,40}?([4-9](?:[.,][05oO])?)\s*(?:\/\s*9(?:\.0)?)?\b/i) ||
+                       fullText.match(/\b([4-9](?:[.,][05oO])?)\s*(?:\/\s*9(?:\.0)?)?\s*(?:Band\s*)?(?:\([^\)]*IELTS[^\)]*|\bIELTS\b)/i);
+    if (ieltsMatch && ieltsMatch[1]) {
+      const val = parseFloat(ieltsMatch[1].replace(/[oO]/g, '0').replace(',', '.'));
+      if (!isNaN(val) && val >= 4.0 && val <= 9.0) detectedIelts = val;
+    }
+  }
 
-  const toeicMatch = fullText.match(/\bTOEIC\b\s*(?:Listening\s*&?\s*Reading)?\s*[:=\s-]?\s*([3-9]\d{2})\b/i) ||
-                     fullText.match(/\b([3-9]\d{2})\s*(?:\/\s*990)?\s*TOEIC\b/i);
+  // 2. TOEIC (hỗ trợ cả 4 kỹ năng, L&R, điểm số)
+  const toeicMatch = fullText.match(/\bTOEIC\b(?:[^\d]|(?:\b[24]\s*(?:kỹ\s*năng|skills|ky\s*nang)\b)){0,40}?([3-9]\d{2})\s*(?:\/\s*990)?\b/i) ||
+                     fullText.match(/\b([3-9]\d{2})\s*(?:\/\s*990)?\s*(?:\([^\)]*TOEIC[^\)]*|\bTOEIC\b)/i);
   if (toeicMatch && toeicMatch[1]) {
     const val = parseInt(toeicMatch[1], 10);
     if (!isNaN(val) && val >= 300 && val <= 990) detectedToeic = val;
   }
 
-  const toeflMatch = fullText.match(/\bTOEFL\b\s*(?:iBT)?\s*[:=\s-]?\s*(\d{2,3})\b/i);
-  if (toeflMatch && !detectedIelts) {
+  // 3. TOEFL
+  const toeflMatch = fullText.match(/\bTOEFL\b[^\d]{0,25}?(\d{2,3})\s*(?:\/\s*120)?\b/i);
+  if (toeflMatch && toeflMatch[1]) {
     const tf = parseInt(toeflMatch[1], 10);
-    if (tf >= 102) detectedIelts = 7.5;
-    else if (tf >= 94) detectedIelts = 7.0;
-    else if (tf >= 79) detectedIelts = 6.5;
-    else if (tf >= 60) detectedIelts = 6.0;
-    else if (tf >= 46) detectedIelts = 5.5;
+    if (tf >= 30 && tf <= 120) detectedToefl = tf;
   }
 
-  const vstepMatch = fullText.match(/\bVSTEP\b\s*[:=\s-]?\s*(B1|B2|C1|C2|[5-9](?:[.,]\d)?)\b/i);
-  if (vstepMatch && !detectedIelts) {
-    const lvl = vstepMatch[1].toUpperCase();
-    if (lvl.includes('C2')) detectedIelts = 8.0;
-    else if (lvl.includes('C1')) detectedIelts = 7.5;
-    else if (lvl.includes('B2')) detectedIelts = 6.0;
-    else if (lvl.includes('B1')) detectedIelts = 5.0;
+  // 4. VSTEP
+  const vstepMatch = fullText.match(/\bVSTEP\b[^\w]{0,15}?(B1|B2|C1|C2|[5-9](?:[.,]\d)?)\b/i);
+  if (vstepMatch && vstepMatch[1]) {
+    detectedVstep = vstepMatch[1].toUpperCase();
   }
 
-  const detMatch = fullText.match(/\b(?:Duolingo|DET)\b\s*(?:English\s*Test)?\s*[:=\s-]?\s*(\d{2,3})\b/i);
-  if (detMatch && !detectedIelts) {
+  // 5. Duolingo DET
+  const detMatch = fullText.match(/\b(?:Duolingo|DET)\b[^\d]{0,25}?(\d{2,3})\s*(?:\/\s*160)?\b/i);
+  if (detMatch && detMatch[1]) {
     const det = parseInt(detMatch[1], 10);
-    if (det >= 135) detectedIelts = 8.0;
-    else if (det >= 120) detectedIelts = 7.5;
-    else if (det >= 105) detectedIelts = 7.0;
-    else if (det >= 90) detectedIelts = 6.5;
-    else if (det >= 80) detectedIelts = 6.0;
+    if (det >= 60 && det <= 160) detectedDet = det;
   }
 
-  const hasEnglishCert = (detectedIelts !== null) || (detectedToeic !== null);
-  let effectiveIelts = detectedIelts;
-  if (!effectiveIelts && detectedToeic) {
+  // 6. Cambridge
+  const camMatch = fullText.match(/\b(?:Cambridge|FCE|CAE|CPE|PET)\b[^\w]{0,25}?(C2|C1|B2|B1|Proficiency|Advanced|First|Preliminary)\b/i);
+  if (camMatch && camMatch[1]) {
+    detectedCambridge = camMatch[1];
+  }
+
+  // 7. Ngôn ngữ Châu Á (TOPIK, JLPT, HSK)
+  const topikM = fullText.match(/\bTOPIK\s*(?:I|II)?\s*(?:level|cấp|cap)?\s*([1-6])\b/i);
+  if (topikM) otherLanguages.push(`TOPIK ${topikM[1]}`);
+  const jlptM = fullText.match(/\bJLPT\s*(N[1-5])\b/i);
+  if (jlptM) otherLanguages.push(`JLPT ${jlptM[1].toUpperCase()}`);
+  const hskM = fullText.match(/\bHSK\s*([1-6])\b/i);
+  if (hskM) otherLanguages.push(`HSK ${hskM[1]}`);
+
+  // Quy đổi điểm tương đương thang IELTS
+  let effectiveIelts = null;
+  const engLabels = [];
+
+  if (detectedIelts !== null) {
+    effectiveIelts = detectedIelts;
+    engLabels.push(`IELTS ${detectedIelts}`);
+  } else if (detectedToeic !== null) {
     if (detectedToeic >= 900) effectiveIelts = 8.0;
     else if (detectedToeic >= 850) effectiveIelts = 7.5;
     else if (detectedToeic >= 785) effectiveIelts = 7.0;
     else if (detectedToeic >= 650) effectiveIelts = 6.5;
     else if (detectedToeic >= 550) effectiveIelts = 6.0;
+    else if (detectedToeic >= 450) effectiveIelts = 5.5;
+    else effectiveIelts = 5.0;
+    engLabels.push(`TOEIC ${detectedToeic} (Quy đổi IELTS ${effectiveIelts})`);
+  } else if (detectedToefl !== null) {
+    if (detectedToefl >= 102) effectiveIelts = 7.5;
+    else if (detectedToefl >= 94) effectiveIelts = 7.0;
+    else if (detectedToefl >= 79) effectiveIelts = 6.5;
+    else if (detectedToefl >= 60) effectiveIelts = 6.0;
+    else if (detectedToefl >= 46) effectiveIelts = 5.5;
+    else effectiveIelts = 5.0;
+    engLabels.push(`TOEFL iBT ${detectedToefl} (Quy đổi IELTS ${effectiveIelts})`);
+  } else if (detectedVstep !== null) {
+    if (detectedVstep.includes('C2')) effectiveIelts = 8.0;
+    else if (detectedVstep.includes('C1')) effectiveIelts = 7.5;
+    else if (detectedVstep.includes('B2')) effectiveIelts = 6.0;
+    else if (detectedVstep.includes('B1')) effectiveIelts = 5.0;
+    else {
+      const vNum = parseFloat(detectedVstep.replace(',', '.'));
+      effectiveIelts = vNum >= 8.5 ? 7.5 : (vNum >= 8.0 ? 7.0 : (vNum >= 7.0 ? 6.5 : (vNum >= 6.0 ? 6.0 : 5.5)));
+    }
+    engLabels.push(`VSTEP ${detectedVstep} (Quy đổi IELTS ${effectiveIelts})`);
+  } else if (detectedDet !== null) {
+    if (detectedDet >= 135) effectiveIelts = 8.0;
+    else if (detectedDet >= 120) effectiveIelts = 7.5;
+    else if (detectedDet >= 105) effectiveIelts = 7.0;
+    else if (detectedDet >= 90) effectiveIelts = 6.5;
+    else if (detectedDet >= 80) effectiveIelts = 6.0;
     else effectiveIelts = 5.5;
+    engLabels.push(`Duolingo DET ${detectedDet} (Quy đổi IELTS ${effectiveIelts})`);
+  } else if (detectedCambridge !== null) {
+    const cUpper = String(detectedCambridge).toUpperCase();
+    if (cUpper.includes('C2') || cUpper.includes('PROFICIENCY')) effectiveIelts = 8.5;
+    else if (cUpper.includes('C1') || cUpper.includes('ADVANCED')) effectiveIelts = 7.5;
+    else if (cUpper.includes('B2') || cUpper.includes('FIRST')) effectiveIelts = 6.0;
+    else if (cUpper.includes('B1') || cUpper.includes('PRELIMINARY')) effectiveIelts = 5.0;
+    engLabels.push(`Cambridge ${detectedCambridge} (Quy đổi IELTS ${effectiveIelts})`);
   }
 
-  const englishText = detectedIelts
-    ? `IELTS ${detectedIelts}`
-    : (detectedToeic ? `TOEIC ${detectedToeic} (Quy đổi IELTS ${effectiveIelts})` : 'Chưa có chứng chỉ');
+  const hasEnglishCert = Boolean(effectiveIelts !== null);
+  if (otherLanguages.length > 0) {
+    engLabels.push(...otherLanguages);
+  }
+
+  const englishText = engLabels.length > 0 ? engLabels.join(' • ') : 'Chưa có chứng chỉ';
 
   // 5. Bóc tách Chuyên Ngành đào tạo
   const majorExplicitMatch = fullText.match(/(?:chuyên\s*ngành|ngành\s*học|ngành|major|field of study)\s*[:=\s-]\s*([^\n\r,;|\.]{3,60})/i) ||
@@ -3701,8 +3773,19 @@ function applyExtractedToForm(extracted, sourceName = 'CV/Resume') {
   }
 
   // Cập nhật Ngoại ngữ (IELTS) nếu thực tế ứng viên có chứng chỉ trong CV
-  if (extracted.has_english && extracted.ielts !== undefined && extracted.ielts !== null && extracted.ielts > 0) {
+  const englishText = extracted.english_score || (extracted.ielts ? `IELTS ${extracted.ielts}` : 'Chưa có chứng chỉ');
+  const hasRealCert = Boolean(
+    extracted.has_english &&
+    englishText &&
+    !englishText.toLowerCase().includes('chưa có') &&
+    !englishText.toLowerCase().includes('none')
+  );
+
+  if (hasRealCert && extracted.ielts !== undefined && extracted.ielts !== null && Number(extracted.ielts) >= 4.0) {
     el.formIelts.value = extracted.ielts;
+    state.cvEnglishMissing = false;
+  } else {
+    state.cvEnglishMissing = true;
   }
   // Publications & Awards: trung thực với CV (0 nếu không có)
   if (extracted.publications_count !== undefined && extracted.publications_count !== null) {
@@ -3755,7 +3838,7 @@ function applyExtractedToForm(extracted, sourceName = 'CV/Resume') {
 
     const engEl = document.getElementById('cv-snapshot-english');
     if (engEl) {
-      if (extracted.has_english) {
+      if (hasRealCert) {
         engEl.innerHTML = `<span style="color: #2563EB; font-weight: 700;">${englishText}</span>`;
       } else {
         engEl.innerHTML = `<span style="color: #D97706; font-weight: 700;">⚠️ Chưa có chứng chỉ (Cần bổ sung)</span>`;
@@ -4169,6 +4252,7 @@ function attachEventListeners() {
     }
     if (el.formIelts) {
       el.formIelts.addEventListener(evt, () => {
+        state.cvEnglishMissing = false;
         updateSliderBadges();
         syncFormToState();
       });
