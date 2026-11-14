@@ -323,6 +323,83 @@ def extract_name_from_text_and_filename(text: str, filename: str = "") -> str:
     return res_name
 
 
+DISQUALIFY_POSITION_PATTERNS = [
+    r'@',
+    r'https?://|www\.|github|linkedin',
+    r'\b(?:email|phone|tel|sđt|mobile|contact|liên\s*hệ|thông\s*tin)\b',
+    r'\b(?:ngày\s*sinh|dob|date of birth|quê\s*quán|địa\s*chỉ|address)\b',
+    r'\b(?:nam|nữ|male|female|giới\s*tính|gender)\b',
+    r'^(?:học\s*vấn|kinh\s*nghiệm|kỹ\s*năng|dự\s*án|chứng\s*chỉ|hoạt\s*động|giải\s*thưởng|sở\s*thích)$',
+    r'^(?:education|experience|skills|projects|certifications|activities|awards|interests)$',
+    r'\b(?:mục\s*tiêu\s*nghề\s*nghiệp|career\s*objective)\b',
+    r'\b(?:đại\s*học|trường|học\s*viện|university|college|institute)\b',
+    r'^\d+$',
+]
+
+
+def clean_applied_position(pos: str) -> Optional[str]:
+    """Lọc và chuẩn hóa vị trí ứng tuyển / chức danh mục tiêu."""
+    if not pos or not isinstance(pos, str):
+        return None
+    p = pos.strip()
+    p = re.sub(
+        r"^(?:vị\s*trí\s*(?:ứng\s*tuyển|mong\s*muốn|công\s*việc|chuyên\s*môn)?|vị\s*trí|applied\s*position|target\s*role|target\s*position|desired\s*role|job\s*title|chức\s*danh)\s*[:=\s-]*",
+        "",
+        p,
+        flags=re.IGNORECASE,
+    ).strip()
+    p = re.sub(r"^[•\-\*●\s\|/]+|[•\-\*●\s\|/]+$", "", p).strip()
+    if not (3 <= len(p) <= 65):
+        return None
+    for pat in DISQUALIFY_POSITION_PATTERNS:
+        if re.search(pat, p, re.IGNORECASE):
+            return None
+    if not re.search(r"[A-Za-zÀ-ỹ]", p):
+        return None
+    return p
+
+
+def extract_applied_position(text: str, full_name: str = "") -> Optional[str]:
+    """
+    Bóc tách Vị trí ứng tuyển / Chức danh mục tiêu:
+    Thường nằm ngay bên dưới Họ và Tên ứng viên ở đầu CV (TopCV, Canva, Europass)
+    hoặc đi kèm nhãn rõ ràng (Vị trí ứng tuyển / Target Position / Job Title).
+    """
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+
+    # 1. Thử qua nhãn rõ ràng trong văn bản
+    explicit_pat = r"(?:vị\s*trí\s*(?:ứng\s*tuyển|mong\s*muốn|công\s*việc|chuyên\s*môn)?|vị\s*trí|applied\s*position|target\s*role|target\s*position|desired\s*role|job\s*title|chức\s*danh)\s*[:=\s-]\s*([^\n\r,;|\.]{3,65})"
+    m = re.search(explicit_pat, text, re.IGNORECASE)
+    if m:
+        c = clean_applied_position(m.group(1))
+        if c:
+            return c
+
+    # 2. Quét dòng ngay dưới tên ứng viên (dòng +1 đến +3)
+    if full_name and lines:
+        name_idx = -1
+        fn_clean = remove_accents(full_name.lower())
+        for idx, line in enumerate(lines[:12]):
+            line_clean = remove_accents(line.lower())
+            if fn_clean in line_clean or line_clean in fn_clean:
+                name_idx = idx
+                break
+        if name_idx != -1:
+            for next_idx in range(name_idx + 1, min(len(lines), name_idx + 4)):
+                cand = clean_applied_position(lines[next_idx])
+                if cand:
+                    return cand
+
+    # 3. Quét dòng 1-3 ở đầu CV nếu dòng 0 là họ tên ứng viên
+    if len(lines) >= 2:
+        for idx in range(1, min(len(lines), 4)):
+            cand = clean_applied_position(lines[idx])
+            if cand:
+                return cand
+
+    return None
+
+
 def extract_gpa_robust(text: str) -> Optional[float]:
     """Trích xuất điểm GPA linh hoạt, hỗ trợ cả dấu phẩy thập phân và thang 10 hoặc thang 4."""
     patterns = [
@@ -871,6 +948,9 @@ def parse_full_cv(
     # 1. Bóc tách Họ tên ứng viên
     full_name = extract_name_from_text_and_filename(text, filename)
 
+    # 1.1. Bóc tách Vị trí ứng tuyển / Chức danh mục tiêu
+    applied_position = extract_applied_position(text, full_name)
+
     # 2. Bóc tách Điểm GPA
     gpa = extract_gpa_robust(text)
 
@@ -910,6 +990,9 @@ def parse_full_cv(
 
     return {
         "full_name": full_name,
+        "applied_position": applied_position,
+        "target_role": applied_position,
+        "job_title": applied_position,
         "email": email,
         "phone": phone,
         "university": university,

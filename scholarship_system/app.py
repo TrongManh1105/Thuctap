@@ -559,7 +559,7 @@ def extract_cv_v1():
     if request.method == "OPTIONS":
         return "", 200
     try:
-        from cv_parser import parse_full_cv, clean_extracted_name, classify_major
+        from cv_parser import parse_full_cv, clean_extracted_name, classify_major, clean_applied_position, extract_applied_position
 
         # Kiểm tra cả 2 key 'file' và 'cv' để tránh lỗi Form Key Mismatch
         uploaded_file = request.files.get("file") or request.files.get("cv")
@@ -613,6 +613,7 @@ def extract_cv_v1():
 Nhiệm vụ: Đọc kỹ tài liệu PDF CV đính kèm (hỗ trợ mọi định dạng: 1 cột, 2 cột, Canva, TopCV, scan, ảnh, tiếng Việt hoặc tiếng Anh) và trích xuất hồ sơ ứng viên thành JSON duy nhất theo schema:
 {{
   "full_name": "Họ và tên ứng viên (đúng chính tả tiếng Việt có dấu)",
+  "applied_position": "Vị trí ứng tuyển / Chức danh mục tiêu (dòng chức danh nghề nghiệp thường nằm ngay dưới Họ và Tên ứng viên trên đầu CV, ví dụ: 'Public Relation & Advertising', 'AI Engineer', 'Chuyên viên Truyền thông', 'Frontend Developer'... nếu không có thì để null)",
   "email": "Email liên hệ",
   "phone": "Số điện thoại liên hệ",
   "university": "Tên trường đại học đã/đang theo học",
@@ -642,15 +643,16 @@ NỘI DUNG VĂN BẢN TRÍCH XUẤT ĐƯỢC:
 
 QUY TẮC BẮT BUỘC:
 1. Đọc đúng Họ và Tên ứng viên từ đầu trang CV (không nhầm với tên trường/ngành).
-2. GPA: Nếu trong CV không có điểm GPA thì để null, không được đoán mò.
-3. CHỨNG CHỈ NGOẠI NGỮ:
+2. VỊ TRÍ ỨNG TUYỂN: Đọc kỹ dòng chức danh/vị trí mục tiêu thường nằm ngay bên dưới Họ và Tên ứng viên ở phần đầu trang CV (ví dụ: 'Public Relation & Advertising', 'Nhân viên Marketing', 'Data Analyst').
+3. GPA: Nếu trong CV không có điểm GPA thì để null, không được đoán mò.
+4. CHỨNG CHỈ NGOẠI NGỮ:
    - Đọc kỹ toàn bộ CV (mục Ngoại ngữ, Kỹ năng, Chứng chỉ, Hoạt động).
    - Nếu có IELTS: Lấy điểm Overall (ví dụ Overall: 6.5 thì ielts = 6.5, không nhầm với điểm từng kỹ năng).
    - Nếu có TOEIC: Ghi rõ điểm toeic (ví dụ 800) và quy đổi sang thang ielts tương đương.
    - Nếu có TOEFL / VSTEP / Duolingo DET / Cambridge: Ghi rõ loại chứng chỉ và quy đổi tương đương.
    - Nếu CV HOÀN TOÀN KHÔNG CÓ chứng chỉ tiếng Anh: Đặt has_english = false, ielts = null, toeic = null, english_score = 'Chưa có chứng chỉ'. Tuyệt đối không bịa điểm nếu CV không nhắc tới.
-4. Bài báo: Bài tập lớn, đồ án sinh viên không phải là bài báo xuất bản (publications_count = 0).
-5. Chỉ xuất JSON thuần túy, không có markdown codeblock hoặc lời giải thích."""
+5. Bài báo: Bài tập lớn, đồ án sinh viên không phải là bài báo xuất bản (publications_count = 0).
+6. Chỉ xuất JSON thuần túy, không có markdown codeblock hoặc lời giải thích."""
 
                 # Cascade models: Ưu tiên gemini-3.5-flash-lite, sau đó fallback gemini-3.1-flash-lite, gemini-3.5-flash
                 raw_models = [
@@ -712,6 +714,13 @@ QUY TẮC BẮT BUỘC:
                     else:
                         parsed["full_name"] = parsed["full_name"].strip() or baseline_parsed.get("full_name")
 
+                # Chuẩn hóa Vị trí ứng tuyển / Chức danh mục tiêu
+                pos_candidate = parsed.get("applied_position") or baseline_parsed.get("applied_position")
+                cleaned_pos = clean_applied_position(pos_candidate) if pos_candidate else None
+                parsed["applied_position"] = cleaned_pos or baseline_parsed.get("applied_position")
+                parsed["target_role"] = parsed["applied_position"]
+                parsed["job_title"] = parsed["applied_position"]
+
                 if parsed.get("gpa") is not None:
                     try:
                         gpa_val = float(parsed["gpa"])
@@ -751,6 +760,10 @@ QUY TẮC BẮT BUỘC:
 
                 parsed["gpa_scale_4"] = parsed.get("gpa")
                 parsed["gpa_raw"] = str(parsed.get("gpa")) if parsed.get("gpa") else None
+                if cleaned_pos:
+                    parsed["applied_position"] = cleaned_pos
+                    parsed["target_role"] = cleaned_pos
+                    parsed["job_title"] = cleaned_pos
                 parsed["research_papers_count"] = parsed.get("publications_count", 0)
                 parsed["raw_summary"] = parsed.get("narrative") or parsed.get("work_experience") or ""
                 parsed["extraction_engine"] = f"Gemini Multimodal AI ({used_model})"

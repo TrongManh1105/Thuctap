@@ -181,6 +181,7 @@ const el = {
   cvSnapshotCard: document.getElementById('cv-candidate-snapshot'),
   cvSnapshotSource: document.getElementById('cv-snapshot-source'),
   cvSnapshotName: document.getElementById('cv-snapshot-name'),
+  cvSnapshotPosition: document.getElementById('cv-snapshot-position'),
   cvSnapshotMajor: document.getElementById('cv-snapshot-major'),
   cvSnapshotNarrative: document.getElementById('cv-snapshot-narrative'),
   cvSnapshotPills: document.getElementById('cv-snapshot-pills'),
@@ -3096,6 +3097,32 @@ function cleanCandidateName(nameCandidate) {
   return words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 }
 
+const DISQUALIFY_POSITION_PATTERNS = [
+  /@/,
+  /https?:\/\/|www\.|github|linkedin/i,
+  /\b(?:email|phone|tel|sđt|mobile|contact|liên\s*hệ|thông\s*tin)\b/i,
+  /\b(?:ngày\s*sinh|dob|date of birth|quê\s*quán|địa\s*chỉ|address)\b/i,
+  /\b(?:nam|nữ|male|female|giới\s*tính|gender)\b/i,
+  /^(?:học\s*vấn|kinh\s*nghiệm|kỹ\s*năng|dự\s*án|chứng\s*chỉ|hoạt\s*động|giải\s*thưởng|sở\s*thích)$/i,
+  /^(?:education|experience|skills|projects|certifications|activities|awards|interests)$/i,
+  /\b(?:mục\s*tiêu\s*nghề\s*nghiệp|career\s*objective)\b/i,
+  /\b(?:đại\s*học|trường|học\s*viện|university|college|institute)\b/i,
+  /^\d+$/,
+];
+
+function cleanCandidatePosition(pos) {
+  if (!pos || typeof pos !== 'string') return null;
+  let p = pos.trim();
+  p = p.replace(/^(?:vị\s*trí\s*(?:ứng\s*tuyển|mong\s*muốn|công\s*việc|chuyên\s*môn)?|vị\s*trí|applied\s*position|target\s*role|target\s*position|desired\s*role|job\s*title|chức\s*danh)\s*[:=\s-]*/i, '').trim();
+  p = p.replace(/^[•\-\*●\s\|/]+|[•\-\*●\s\|/]+$/g, '').trim();
+  if (p.length < 3 || p.length > 65) return null;
+  for (const pat of DISQUALIFY_POSITION_PATTERNS) {
+    if (pat.test(p)) return null;
+  }
+  if (!/[A-Za-zÀ-ỹ]/.test(p)) return null;
+  return p;
+}
+
 function classifyCandidateMajor(rawMajor) {
   if (!rawMajor || typeof rawMajor !== 'string') return 'Kinh tế & Tài chính';
   const m = rawMajor.trim();
@@ -3358,6 +3385,47 @@ async function extractCvClientSide(file) {
     }
   }
 
+  // 2.5. Bóc tách Vị trí ứng tuyển / Mục tiêu nghề nghiệp (Applied Position / Job Title)
+  let detectedPosition = '';
+  const posExplicitMatch = fullText.match(/(?:vị\s*trí\s*(?:ứng\s*tuyển|mong\s*muốn|công\s*việc|chuyên\s*môn)?|vị\s*trí|applied\s*position|target\s*role|target\s*position|desired\s*role|job\s*title|chức\s*danh)\s*[:=\s-]\s*([^\n\r,;|\.]{3,65})/i);
+  if (posExplicitMatch) {
+    const cleanedPos = cleanCandidatePosition(posExplicitMatch[1]);
+    if (cleanedPos) detectedPosition = cleanedPos;
+  }
+
+  // Quét các dòng ngay dưới họ tên ứng viên (dòng +1 đến +3)
+  if (!detectedPosition && lines.length > 1) {
+    let nameIdx = -1;
+    const cleanDetName = removeVietnameseAccents(detectedName || '').toLowerCase();
+    for (let i = 0; i < Math.min(lines.length, 12); i++) {
+      const cleanLine = removeVietnameseAccents(lines[i]).toLowerCase();
+      if (cleanDetName && (cleanLine.includes(cleanDetName) || cleanDetName.includes(cleanLine))) {
+        nameIdx = i;
+        break;
+      }
+    }
+    if (nameIdx !== -1) {
+      for (let nextIdx = nameIdx + 1; nextIdx < Math.min(lines.length, nameIdx + 4); nextIdx++) {
+        const candPos = cleanCandidatePosition(lines[nextIdx]);
+        if (candPos) {
+          detectedPosition = candPos;
+          break;
+        }
+      }
+    }
+  }
+
+  // Quét dòng 1-3 nếu ở đầu CV
+  if (!detectedPosition && lines.length >= 2) {
+    for (let idx = 1; idx < Math.min(lines.length, 4); idx++) {
+      const candPos = cleanCandidatePosition(lines[idx]);
+      if (candPos) {
+        detectedPosition = candPos;
+        break;
+      }
+    }
+  }
+
   // 3. Bóc tách Điểm GPA (Hỗ trợ thang 4.0, thang 10.0, CPA, điểm trung bình toàn khóa)
   const gpaPatterns = [
     /(?:GPA|CPA|CGPA|Điểm\s*(?:trung\s*bình)?\s*(?:tích\s*lũy|toàn\s*khóa|học\s*tập|TN|hệ\s*4|hệ\s*10)?|Grade\s*Point\s*Average|Điểm\s*GPA|Điểm\s*CPA|Cumulative\s*GPA|Academic\s*GPA|Overall\s*GPA|Current\s*GPA|Điểm\s*số)\s*[:=\s-]?\s*([0-9]+(?:[.,][0-9]{1,2})?)\s*(?:\/\s*([0-9]+(?:\.[0-9]+)?))?/i,
@@ -3617,6 +3685,9 @@ async function extractCvClientSide(file) {
 
   return {
     full_name: detectedName,
+    applied_position: detectedPosition || null,
+    target_role: detectedPosition || null,
+    job_title: detectedPosition || null,
     major: detectedMajor,
     university: detectedUni,
     gpa: detectedGpa,
@@ -3699,6 +3770,15 @@ async function handleCvUpload(file) {
       if (fnClean) cleanFinalName = fnClean;
     }
     merged.full_name = cleanFinalName || 'Ứng viên (Hồ sơ tải lên)';
+
+    // Chuẩn hóa vị trí ứng tuyển / mục tiêu nghề nghiệp
+    const rawPos = merged.applied_position || merged.target_role || merged.job_title;
+    if (rawPos) {
+      const cleanPos = cleanCandidatePosition(rawPos) || rawPos;
+      merged.applied_position = cleanPos;
+      merged.target_role = cleanPos;
+      merged.job_title = cleanPos;
+    }
 
     el.scanStatusText.textContent = 'Hoàn tất bóc tách hồ sơ CV!';
     el.scanStatusStep.textContent = 'Bước 3/3: Đã cập nhật thành công vào hồ sơ năng lực';
@@ -3797,13 +3877,18 @@ function applyExtractedToForm(extracted, sourceName = 'CV/Resume') {
 
   // Cập nhật Topbar & Header hồ sơ người dùng
   const candidateFullName = extracted.full_name || el.formFullName.value || 'Ứng viên';
+  const appliedPos = extracted.applied_position || extracted.target_role || extracted.job_title;
   const hdrName = document.getElementById('header-student-name');
   if (hdrName) hdrName.textContent = candidateFullName;
   const heroUserName = document.getElementById('s360-hero-user-name');
   if (heroUserName) heroUserName.textContent = candidateFullName;
   const hdrMajor = document.getElementById('header-student-major');
-  if (hdrMajor && (extracted.major || el.formMajor.value)) {
-    hdrMajor.textContent = (extracted.major || el.formMajor.value).split('/')[0].trim();
+  if (hdrMajor) {
+    if (appliedPos) {
+      hdrMajor.textContent = appliedPos;
+    } else if (extracted.major || el.formMajor.value) {
+      hdrMajor.textContent = (extracted.major || el.formMajor.value).split('/')[0].trim();
+    }
   }
   const avatarBadge = document.querySelector('.s360-avatar-badge');
   if (avatarBadge && candidateFullName) {
@@ -3832,6 +3917,15 @@ function applyExtractedToForm(extracted, sourceName = 'CV/Resume') {
     
     const nameEl = document.getElementById('cv-snapshot-name');
     if (nameEl) nameEl.textContent = candidateName;
+
+    const posEl = document.getElementById('cv-snapshot-position');
+    if (posEl) {
+      if (appliedPos && !appliedPos.toLowerCase().includes('chưa xác định')) {
+        posEl.innerHTML = `<span style="color: #2563EB; font-weight: 700;">${appliedPos}</span>`;
+      } else {
+        posEl.innerHTML = `<span style="color: #64748B; font-weight: 500;">Chưa xác định trong CV</span>`;
+      }
+    }
 
     const majorEl = document.getElementById('cv-snapshot-major');
     if (majorEl) majorEl.textContent = majorName;
@@ -3915,6 +4009,9 @@ function triggerDemoCvScan() {
   runScannerAnimation('CV_NguyenTrongManhTien_AI.pdf', () => {
     const demoCandidate = {
       full_name: 'Nguyễn Trọng Mạnh Tiến',
+      applied_position: 'Kỹ sư Trí tuệ Nhân tạo (AI)',
+      target_role: 'Kỹ sư Trí tuệ Nhân tạo (AI)',
+      job_title: 'Kỹ sư Trí tuệ Nhân tạo (AI)',
       university: 'Trường Đại học Thủy Lợi, Hà Nội',
       major: 'Trí tuệ Nhân tạo (AI)',
       target_degree: 'Thạc sĩ',

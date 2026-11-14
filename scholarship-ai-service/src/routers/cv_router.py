@@ -108,6 +108,7 @@ async def extract_cv_endpoint(
         prompt = f"""Bạn là chuyên gia phân tích CV học bổng ScholarMatch AI.
 Hãy đọc kỹ nội dung CV dưới đây và trích xuất thông tin theo định dạng JSON hợp lệ:
 - full_name: Họ tên ứng viên
+- applied_position: Vị trí ứng tuyển / Chức danh mục tiêu (dòng chức danh thường nằm ngay dưới Họ và Tên ứng viên ở đầu CV, ví dụ: 'Public Relation & Advertising', 'AI Engineer', 'Nhân viên Marketing'...)
 - major: Chuyên ngành
 - gpa_scale_4: Điểm GPA quy đổi về thang 4.0 (dạng số float, ví dụ: 3.65). Nếu là thang 10 hãy tự quy đổi.
 - gpa_raw: Chuỗi GPA nguyên bản trong CV (ví dụ: "3.65/4.0" hoặc "8.5/10")
@@ -133,6 +134,9 @@ CHỈ TRẢ VỀ DUY NHẤT ĐỐI TƯỢNG JSON HỢP LỆ, KHÔNG KÈM THEO B�
             baseline = parse_full_cv(file_bytes, file.filename, text_override=clean_text)
             parsed_json = {
                 "full_name": baseline.get("full_name"),
+                "applied_position": baseline.get("applied_position"),
+                "target_role": baseline.get("target_role"),
+                "job_title": baseline.get("job_title"),
                 "major": baseline.get("major"),
                 "gpa_scale_4": baseline.get("gpa"),
                 "gpa_raw": str(baseline.get("gpa")) if baseline.get("gpa") else None,

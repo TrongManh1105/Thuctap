@@ -180,6 +180,13 @@ export async function extractCvProfile(file) {
         data.research_papers_count = data.research_papers_count ?? data.publications_count;
         data.narrative = data.narrative ?? data.raw_summary;
         data.raw_summary = data.raw_summary ?? data.narrative;
+
+        // Chuẩn hóa vị trí ứng tuyển / mục tiêu nghề nghiệp
+        const rawPos = data.applied_position ?? data.target_role ?? data.job_title ?? null;
+        data.applied_position = rawPos;
+        data.target_role = rawPos;
+        data.job_title = rawPos;
+
         return data;
       }
       const errData = await res.json().catch(() => ({}));

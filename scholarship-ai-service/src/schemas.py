@@ -6,6 +6,9 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 class ExtractedCandidateProfile(BaseModel):
     full_name: Optional[str] = Field(None, description="Họ và tên ứng viên")
+    applied_position: Optional[str] = Field(None, description="Vị trí ứng tuyển / Chức danh mục tiêu")
+    target_role: Optional[str] = Field(None, description="Vị trí ứng tuyển (alias)")
+    job_title: Optional[str] = Field(None, description="Chức danh mục tiêu (alias)")
     major: Optional[str] = Field(None, description="Chuyên ngành")
     gpa_scale_4: Optional[float] = Field(None, description="Điểm GPA quy đổi về thang 4.0")
     gpa_raw: Optional[str] = Field(None, description="Điểm GPA nguyên bản trong CV")
@@ -93,6 +96,12 @@ class ExtractedCandidateProfile(BaseModel):
             self.english_score = f"IELTS {self.ielts_score}"
         elif not self.has_english and not self.english_score:
             self.english_score = "Chưa có chứng chỉ"
+
+        # Đồng bộ applied_position, target_role, job_title
+        pos = self.applied_position or self.target_role or self.job_title
+        self.applied_position = pos
+        self.target_role = pos
+        self.job_title = pos
 
         # Đồng bộ publications_count và research_papers_count
         if (self.publications_count is None or self.publications_count == 0) and self.research_papers_count > 0:
