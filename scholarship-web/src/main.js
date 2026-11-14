@@ -21,6 +21,8 @@ const state = {
   selectedTier: 'ALL',
   profileMode: 'cv',
   cvGpaSupplemented: null,
+  cvEnglishMissing: false,
+  extractedProfile: null,
   theme: localStorage.getItem('theme') || 'light',
   currentRole: 'student', // 'student' | 'admin' | 'advisor' | 'sponsor'
   profile: { ...DEMO_PROFILE, gpa: 3.20, ielts: 5.5, preferred_countries: ['Hàn Quốc'], target_universities: [] },
@@ -1561,18 +1563,23 @@ function syncFormToState() {
     (p) => p.dataset.val
   );
 
-  let candidateGpa = parseFloat(el.formGpa.value);
+  let candidateGpa = null;
   if (state.profileMode === 'cv') {
-    if (state.cvGpaSupplemented !== null) {
+    if (state.cvGpaSupplemented !== null && state.cvGpaSupplemented !== undefined && state.cvGpaSupplemented > 0) {
       candidateGpa = state.cvGpaSupplemented;
     } else {
       const inlineInput = document.getElementById('cv-inline-gpa');
-      if (inlineInput && inlineInput.value) {
-        candidateGpa = parseFloat(inlineInput.value);
-      } else {
-        candidateGpa = null;
+      if (inlineInput && inlineInput.value && inlineInput.value.trim() !== '') {
+        const raw = inlineInput.value.trim().replace(',', '.');
+        const parsed = parseFloat(raw);
+        if (!isNaN(parsed) && parsed >= 1.0 && parsed <= 4.0) {
+          candidateGpa = parsed;
+          state.cvGpaSupplemented = parsed;
+        }
       }
     }
+  } else {
+    candidateGpa = parseFloat(String(el.formGpa?.value || 3.20).replace(',', '.')) || 3.20;
   }
 
   // Quốc gia nguyện vọng: ở CV mode nếu chưa chọn nước cụ thể thì đối soát toàn cầu
@@ -1581,18 +1588,54 @@ function syncFormToState() {
     chosenCountries = [];
   }
 
+  // Ngoại ngữ: bảo đảm trung thực với CV (không tự ý đặt điểm IELTS nếu CV không có)
+  let candidateIelts = null;
+  let candidateHasEnglish = false;
+  let candidateEngScore = 'Chưa có chứng chỉ';
+
+  if (state.profileMode === 'cv') {
+    if (state.extractedProfile && state.extractedProfile.has_english && state.extractedProfile.ielts) {
+      candidateHasEnglish = true;
+      candidateIelts = state.extractedProfile.ielts;
+      candidateEngScore = state.extractedProfile.english_score || `IELTS ${candidateIelts}`;
+    } else if (!state.cvEnglishMissing && el.formIelts && el.formIelts.value) {
+      candidateIelts = parseFloat(String(el.formIelts.value).replace(',', '.'));
+      candidateHasEnglish = Boolean(candidateIelts && candidateIelts >= 4.0);
+      candidateEngScore = candidateHasEnglish ? `IELTS ${candidateIelts.toFixed(1)}` : 'Chưa có chứng chỉ';
+    }
+  } else {
+    candidateIelts = parseFloat(String(el.formIelts?.value || 5.5).replace(',', '.')) || 5.5;
+    candidateHasEnglish = candidateIelts >= 4.0;
+    candidateEngScore = `IELTS ${candidateIelts.toFixed(1)}`;
+  }
+
+  const ep = (state.profileMode === 'cv' && state.extractedProfile) ? state.extractedProfile : {};
+
   state.profile = {
-    full_name: el.formFullName.value.trim() || 'Nguyễn Trọng Mạnh Tiến',
-    target_degree: el.formDegree.value || 'Thạc sĩ',
-    major: el.formMajor.value.trim() || 'Trí tuệ Nhân tạo / Khoa học Máy tính',
+    ...state.profile,
+    ...ep,
+    full_name: (el.formFullName && el.formFullName.value.trim()) || ep.full_name || 'Ứng viên',
+    target_degree: (el.formDegree && el.formDegree.value) || ep.target_degree || 'Thạc sĩ',
+    major: (el.formMajor && el.formMajor.value.trim()) || ep.major || 'Kinh tế & Tài chính',
+    applied_position: ep.applied_position || ep.target_role || ep.job_title || null,
+    target_role: ep.applied_position || ep.target_role || ep.job_title || null,
+    job_title: ep.applied_position || ep.target_role || ep.job_title || null,
     gpa: candidateGpa,
-    ielts: parseFloat(el.formIelts.value) || 5.5,
+    has_gpa: (candidateGpa !== null && candidateGpa !== undefined && candidateGpa > 0),
+    ielts: candidateIelts,
+    has_english: candidateHasEnglish,
+    english_score: candidateEngScore,
     topik_level: 0,
     preferred_countries: chosenCountries,
     target_universities: state.profile.target_universities || [],
-    publications_count: parseInt(el.formPubs.value, 10) || 0,
-    awards_count: parseInt(el.formAwards.value, 10) || 0,
-    statement_of_purpose: el.formSop ? el.formSop.value.trim() : '',
+    publications_count: (el.formPubs && el.formPubs.value !== '') ? parseInt(el.formPubs.value, 10) : (ep.publications_count || 0),
+    awards_count: (el.formAwards && el.formAwards.value !== '') ? parseInt(el.formAwards.value, 10) : (ep.awards_count || 0),
+    statement_of_purpose: (el.formSop && el.formSop.value.trim()) || ep.narrative || '',
+    skills: ep.skills || state.profile.skills || [],
+    featured_projects: ep.featured_projects || state.profile.featured_projects || [],
+    coursework: ep.coursework || state.profile.coursework || [],
+    narrative: ep.narrative || state.profile.narrative || '',
+    university: ep.university || state.profile.university || '',
     work_experience_years: 0.0,
     research_experience_years: 1.0,
   };
@@ -1834,10 +1877,10 @@ function resolveTargetUniversityScholarship(uniName, profile, defaultCountry = '
 }
 
 function calculatePersonalizedMatchingLocal(profile) {
-  const gpa = profile.gpa || 2.45;
-  const ielts = profile.ielts || 4.5;
-  const pubs = profile.publications_count || 1;
-  const awards = profile.awards_count || 2;
+  const gpa = (profile.gpa !== null && profile.gpa !== undefined) ? profile.gpa : 3.0;
+  const ielts = (profile.ielts !== null && profile.ielts !== undefined) ? profile.ielts : (profile.has_english ? 5.5 : 4.5);
+  const pubs = (profile.publications_count !== undefined && profile.publications_count !== null) ? profile.publications_count : 0;
+  const awards = (profile.awards_count !== undefined && profile.awards_count !== null) ? profile.awards_count : 0;
   const preferred = profile.preferred_countries || [];
   const targetUnis = profile.target_universities || [];
 
@@ -2098,19 +2141,23 @@ function renderTargetUniBanner() {
 function renderPersonalizedDiagnosticCard() {
   const p = state.profile;
   const gpa = p.gpa;
-  const ielts = (p.ielts !== undefined && p.ielts !== null) ? p.ielts : 5.5;
-  const pubs = p.publications_count || 0;
-  const awards = p.awards_count || 0;
+  const ielts = p.ielts;
+  const hasEnglish = Boolean(p.has_english && ielts !== null && ielts !== undefined && ielts >= 4.0);
+  const englishDisplay = p.english_score || (hasEnglish ? `IELTS ${ielts.toFixed(1)}` : 'Chưa có chứng chỉ');
+  const pubs = (p.publications_count !== undefined && p.publications_count !== null) ? p.publications_count : 0;
+  const awards = (p.awards_count !== undefined && p.awards_count !== null) ? p.awards_count : 0;
   const countries = p.preferred_countries && p.preferred_countries.length > 0 ? p.preferred_countries.join(', ') : 'Toàn cầu (Tất cả quốc gia)';
   const targetUnis = p.target_universities && p.target_universities.length > 0 ? p.target_universities.join(', ') : '';
 
   const candNameEl = document.getElementById('diag-candidate-name');
-  if (candNameEl) candNameEl.textContent = p.full_name || 'Nguyễn Trọng Mạnh Tiến';
+  if (candNameEl) candNameEl.textContent = p.full_name || 'Ứng viên';
 
   const candStatsEl = document.getElementById('diag-candidate-stats');
   if (candStatsEl) {
-    const gpaText = (gpa !== null && gpa !== undefined) ? `GPA: ${gpa.toFixed(2)}/4.0` : 'GPA: Chưa có';
-    candStatsEl.textContent = `Mục tiêu: ${p.target_degree} • Ngành: ${p.major} • IELTS: ${ielts.toFixed(1)} • ${gpaText} • Quốc gia: ${countries}`;
+    const gpaText = (gpa !== null && gpa !== undefined) ? `GPA: ${gpa.toFixed(2)}/4.0` : 'GPA: Chưa có trong CV';
+    const engText = hasEnglish ? `Ngoại ngữ: ${englishDisplay}` : 'Ngoại ngữ: Chưa có chứng chỉ';
+    const roleText = p.applied_position ? ` • Vị trí: ${p.applied_position}` : '';
+    candStatsEl.textContent = `Mục tiêu: ${p.target_degree} • Ngành: ${p.major}${roleText} • ${engText} • ${gpaText} • Quốc gia: ${countries}`;
   }
 
   // Tính toán chỉ số sẵn sàng hồ sơ khách quan
@@ -2122,7 +2169,7 @@ function renderPersonalizedDiagnosticCard() {
     else if (gpa >= 2.5) readiness += 10;
     else readiness += 5;
   }
-  if (ielts) {
+  if (hasEnglish && ielts) {
     if (ielts >= 7.5) readiness += 20;
     else if (ielts >= 6.5) readiness += 15;
     else if (ielts >= 5.5) readiness += 10;
@@ -2157,6 +2204,18 @@ function renderPersonalizedDiagnosticCard() {
       </li>
     `;
 
+    if (p.applied_position) {
+      passedHtml += `
+        <li>
+          <span class="item-check">✓</span>
+          <div>
+            <strong>Vị trí ứng tuyển mục tiêu:</strong>
+            <span>${p.applied_position}</span>
+          </div>
+        </li>
+      `;
+    }
+
     if (countries && countries !== 'Toàn cầu (Tất cả quốc gia)') {
       passedHtml += `
         <li>
@@ -2181,19 +2240,21 @@ function renderPersonalizedDiagnosticCard() {
       `;
     }
 
-    if (ielts >= 4.5) {
+    // CHỨNG CHỈ NGOẠI NGỮ: CHỈ XẾP VÀO ĐỦ ĐIỀU KIỆN KHI THỰC SỰ CÓ CHỨNG CHỈ
+    if (hasEnglish && ielts !== null && ielts >= 4.5) {
       const langNote = ielts >= 6.5 ? 'Đạt chuẩn xét tuyển cạnh tranh' : 'Đạt chuẩn cơ sở nộp hồ sơ';
       passedHtml += `
         <li>
           <span class="item-check">✓</span>
           <div>
             <strong>Chứng chỉ ngoại ngữ:</strong>
-            <span>IELTS ${ielts.toFixed(1)} (${langNote})</span>
+            <span>${englishDisplay} (${langNote})</span>
           </div>
         </li>
       `;
     }
 
+    // ĐIỂM GPA: CHỈ XẾP VÀO ĐỦ ĐIỀU KIỆN KHI CÓ ĐIỂM HỢP LỆ
     if (gpa !== null && gpa !== undefined && gpa >= 2.0) {
       const gpaNote = gpa >= 3.2 ? 'Đạt chuẩn Giỏi / Xuất sắc' : gpa >= 2.8 ? 'Đạt chuẩn Khá' : 'Đạt ngưỡng điểm nộp hồ sơ xét tuyển';
       passedHtml += `
@@ -2231,17 +2292,35 @@ function renderPersonalizedDiagnosticCard() {
       `;
     }
 
-    if (state.profileMode === 'cv') {
-      passedHtml += `
-        <li>
-          <span class="item-check">✓</span>
-          <div>
-            <strong>Kỹ năng &amp; Đồ án:</strong>
-            <span>Nghiên cứu mô hình PAttn &amp; Phân loại DistilBERT (PyTorch)</span>
-          </div>
-        </li>
-      `;
+    // KỸ NĂNG & ĐỒ ÁN: ĐƯỢC TỔNG HỢP NĂNG ĐỘNG TỪ CHÍNH FILE CV ĐÃ TẢI LÊN
+    const projects = (p.featured_projects && p.featured_projects.length > 0) ? p.featured_projects : [];
+    const skills = (p.skills && p.skills.length > 0) ? p.skills : [];
+    const coursework = (p.coursework && p.coursework.length > 0) ? p.coursework : [];
+
+    let capText = '';
+    if (projects.length > 0 && skills.length > 0) {
+      capText = `Đồ án: ${projects.slice(0, 2).join('; ')} • Kỹ năng: ${skills.slice(0, 4).join(', ')}`;
+    } else if (projects.length > 0) {
+      capText = `Đồ án/Dự án: ${projects.slice(0, 2).join('; ')}`;
+    } else if (skills.length > 0) {
+      capText = `Kỹ năng chuyên môn: ${skills.slice(0, 5).join(', ')}`;
+    } else if (coursework.length > 0) {
+      capText = `Môn học chuyên sâu: ${coursework.slice(0, 4).join(', ')}`;
+    } else if (p.applied_position) {
+      capText = `Năng lực định hướng vị trí: <strong>${p.applied_position}</strong> (Bóc tách từ CV)`;
+    } else {
+      capText = `Nền tảng đào tạo ngành ${p.major} tại ${p.university || 'trường đại học'}`;
     }
+
+    passedHtml += `
+      <li>
+        <span class="item-check">✓</span>
+        <div>
+          <strong>Kỹ năng &amp; Đồ án thực tế (Từ CV):</strong>
+          <span>${capText}</span>
+        </div>
+      </li>
+    `;
 
     passedList.innerHTML = passedHtml;
   }
@@ -2257,7 +2336,7 @@ function renderPersonalizedDiagnosticCard() {
           <span class="item-alert">!</span>
           <div>
             <strong>Điểm GPA tích lũy:</strong>
-            <span>Chưa có trong hồ sơ (Cần bổ sung bảng điểm chính thức)</span>
+            <span>Chưa có trong CV (Cần bổ sung bảng điểm chính thức hoặc nhập GPA vào ô trên)</span>
           </div>
         </li>
       `;
@@ -2273,13 +2352,23 @@ function renderPersonalizedDiagnosticCard() {
       `;
     }
 
-    if (ielts < 6.5) {
+    if (!hasEnglish || ielts === null || ielts === undefined) {
+      missingHtml += `
+        <li>
+          <span class="item-alert">!</span>
+          <div>
+            <strong>Chứng chỉ ngoại ngữ:</strong>
+            <span>Chưa có chứng chỉ trong hồ sơ CV (Cần thi bổ sung chứng chỉ IELTS tối thiểu 6.0 - 6.5+ hoặc TOEIC/TOEFL tương đương để đáp ứng điều kiện xét tuyển học bổng)</span>
+          </div>
+        </li>
+      `;
+    } else if (ielts < 6.5) {
       missingHtml += `
         <li>
           <span class="item-alert">!</span>
           <div>
             <strong>Chứng chỉ ngoại ngữ nâng cao:</strong>
-            <span>IELTS hiện tại ${ielts.toFixed(1)} (Khuyến nghị nâng lên tối thiểu 6.0 - 6.5+ để tăng cơ hội trúng tuyển học bổng toàn phần)</span>
+            <span>Hiện đạt ${englishDisplay} (Khuyến nghị nâng lên tối thiểu IELTS 6.5+ để tăng cơ hội trúng tuyển học bổng toàn phần)</span>
           </div>
         </li>
       `;
@@ -3831,6 +3920,9 @@ function runScannerAnimation(fileName, onFinishCallback) {
 }
 
 function applyExtractedToForm(extracted, sourceName = 'CV/Resume') {
+  state.profileMode = 'cv';
+  state.extractedProfile = { ...extracted };
+
   // Chỉ cập nhật những trường thực sự trích xuất được từ CV
   if (extracted.full_name) el.formFullName.value = extracted.full_name;
   if (extracted.major) el.formMajor.value = extracted.major;
@@ -3864,8 +3956,13 @@ function applyExtractedToForm(extracted, sourceName = 'CV/Resume') {
   if (hasRealCert && extracted.ielts !== undefined && extracted.ielts !== null && Number(extracted.ielts) >= 4.0) {
     el.formIelts.value = extracted.ielts;
     state.cvEnglishMissing = false;
+    state.extractedProfile.has_english = true;
+    state.extractedProfile.ielts = extracted.ielts;
   } else {
     state.cvEnglishMissing = true;
+    state.extractedProfile.has_english = false;
+    state.extractedProfile.ielts = null;
+    state.extractedProfile.english_score = 'Chưa có chứng chỉ';
   }
   // Publications & Awards: trung thực với CV (0 nếu không có)
   if (extracted.publications_count !== undefined && extracted.publications_count !== null) {
@@ -4540,7 +4637,7 @@ function attachEventListeners() {
   // Xử lý áp dụng điểm GPA bổ sung từ CV Snapshot
   if (btnApplyCvGpa && cvInlineGpa) {
     btnApplyCvGpa.addEventListener('click', () => {
-      const gpaVal = parseFloat(cvInlineGpa.value);
+      const gpaVal = parseFloat(cvInlineGpa.value.trim().replace(',', '.'));
       if (isNaN(gpaVal) || gpaVal < 1.0 || gpaVal > 4.0) {
         showStudent360Toast('⚠️ Vui lòng nhập điểm GPA hợp lệ từ 1.0 đến 4.0');
         return;
@@ -4563,8 +4660,8 @@ function attachEventListeners() {
   if (btnRunMatchCv) {
     btnRunMatchCv.addEventListener('click', () => {
       state.profileMode = 'cv';
-      if (cvInlineGpa && cvInlineGpa.value) {
-        const gpaVal = parseFloat(cvInlineGpa.value);
+      if (cvInlineGpa && cvInlineGpa.value && cvInlineGpa.value.trim() !== '') {
+        const gpaVal = parseFloat(cvInlineGpa.value.trim().replace(',', '.'));
         if (!isNaN(gpaVal) && gpaVal >= 1.0 && gpaVal <= 4.0) {
           state.cvGpaSupplemented = gpaVal;
           el.formGpa.value = gpaVal;
