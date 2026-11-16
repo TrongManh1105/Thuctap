@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light dark" />
-  <title>ScholarMatch AI — Hệ Thống Đối Khớp & Săn Học Bổng Toàn Cầu</title>
+  <title>Student 360 — Cổng Thông Tin Sinh Viên & Phân Hệ Cơ Hội Học Bổng AI</title>
   <meta name="description" content="Nền tảng trí tuệ nhân tạo đối khớp 7,949+ học bổng du học toàn cầu, phân tích khoảng cách tiêu chuẩn (Gap Analysis) và trợ lý ảo tư vấn 24/7." />
   
   <!-- Open Graph / SEO for Public Sharing -->
@@ -36,21 +36,19 @@
         </svg>
       </button>
 
-      <!-- ScholarMatch Brand -->
-      <div class="s360-brand-box" id="brand-logo" role="button" tabindex="0" title="ScholarMatch - Trang chủ">
-        <div class="s360-logo-wrapper" style="background: linear-gradient(135deg, #4f46e5 0%, #2563eb 50%, #06b6d4 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#ffffff" stroke="#ffffff" stroke-width="1.2" stroke-linejoin="round"/>
-            <path d="M4.5 10V15.5C4.5 17.5 7.8 19.5 12 19.5C16.2 19.5 19.5 17.5 19.5 15.5V10" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M22 9V15" stroke="#FDE047" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="22" cy="16" r="1.5" fill="#FDE047"/>
+      <!-- Student 360 Brand Box -->
+      <div class="s360-brand-box" id="brand-logo" role="button" tabindex="0" title="Student 360 - Cổng thông tin sinh viên toàn diện">
+        <div class="s360-logo-wrapper" style="background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #0284c7 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
           </svg>
         </div>
         <div class="s360-brand-text">
           <div class="s360-title-row">
-            <span class="s360-brand-name" style="letter-spacing: 0.5px; font-weight: 800;">SCHOLARMATCH</span>
+            <span class="s360-brand-name" style="letter-spacing: 0.5px; font-weight: 800; color: #1e40af;">STUDENT 360</span>
           </div>
-          <span class="s360-brand-subtitle" style="font-size: 0.68rem; font-weight: 600; letter-spacing: 0.5px;">CỔNG ĐỐI KHỚP HỌC BỔNG THÔNG MINH</span>
+          <span class="s360-brand-subtitle" style="font-size: 0.68rem; font-weight: 600; letter-spacing: 0.4px;">HỆ THỐNG HỖ TRỢ SINH VIÊN TOÀN DIỆN</span>
         </div>
       </div>
     </div>
@@ -183,18 +181,80 @@
       </div>
     </div>
 
-    <!-- Navigation Menu Items (ScholarMatch Dedicated) -->
+    <!-- Navigation Menu Items (Student 360 Full Navigation with Scholarship Sub-branch) -->
     <nav class="s360-sidebar-nav" id="sidebar-nav-container">
-      <!-- 1. Menu Group: TỔNG QUAN -->
-      <div class="s360-nav-group expanded" data-group="tong-quan">
-        <button type="button" class="s360-group-toggle group-active" title="Tổng quan">
+      <!-- 1. Menu Group: HỌC TẬP CỦA TÔI -->
+      <div class="s360-nav-group" data-group="hoc-tap">
+        <button type="button" class="s360-group-toggle" title="Học tập của tôi">
           <svg class="s360-group-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="9"></rect>
-            <rect x="14" y="3" width="7" height="5"></rect>
-            <rect x="14" y="12" width="7" height="9"></rect>
-            <rect x="3" y="16" width="7" height="5"></rect>
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
           </svg>
-          <span class="s360-group-label">TỔNG QUAN</span>
+          <span class="s360-group-label">HỌC TẬP CỦA TÔI</span>
+          <svg class="s360-group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="s360-group-items">
+          <button type="button" class="s360-subnav-btn" data-menu="ket-qua-hoc-tap" data-role-view="learning" title="Kết quả học tập">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+            <span class="s360-item-label">Kết quả học tập</span>
+          </button>
+          <button type="button" class="s360-subnav-btn" data-menu="thoi-khoa-bieu" data-role-view="schedule" title="Thời khóa biểu">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span class="s360-item-label">Thời khóa biểu</span>
+          </button>
+          <button type="button" class="s360-subnav-btn" data-menu="diem-ren-luyen" data-role-view="conduct" title="Rèn luyện & Quyết định">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="7"></circle>
+              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+            </svg>
+            <span class="s360-item-label">Rèn luyện & Quyết định</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Menu Group: TÀI CHÍNH HỌC VỤ -->
+      <div class="s360-nav-group expanded" data-group="tai-chinh-hoc-vu">
+        <button type="button" class="s360-group-toggle group-active" title="Tài chính học vụ">
+          <svg class="s360-group-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
+          </svg>
+          <span class="s360-group-label">TÀI CHÍNH HỌC VỤ</span>
+          <svg class="s360-group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="s360-group-items">
+          <button type="button" class="s360-subnav-btn" data-menu="hoc-phi" data-role-view="finance" title="Học phí & công nợ">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"></path>
+              <line x1="8" y1="8" x2="16" y2="8"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            <span class="s360-item-label">Học phí & công nợ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Sub-branch Flagship: CƠ HỘI HỌC BỔNG (ScholarMatch AI) -->
+      <div class="s360-nav-group expanded" data-group="co-hoi-hoc-bong" style="background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.12); border-radius: 12px; margin: 4px 6px; padding-bottom: 4px;">
+        <button type="button" class="s360-group-toggle group-active" title="Cơ hội học bổng & Gợi ý AI" style="border-radius: 10px 10px 0 0;">
+          <svg class="s360-group-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+          <span class="s360-group-label" style="color: #2563EB; font-weight: 800;">CƠ HỘI HỌC BỔNG</span>
+          <span style="font-size: 10px; background: #2563EB; color: #fff; padding: 1px 7px; border-radius: 999px; font-weight: 700; margin-left: auto; margin-right: 6px;">AI Hub</span>
           <svg class="s360-group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
@@ -209,63 +269,29 @@
             </svg>
             <span class="s360-item-label">Dashboard Học bổng</span>
           </button>
-        </div>
-      </div>
-
-      <!-- 2. Menu Group: CƠ HỘI HỌC BỔNG -->
-      <div class="s360-nav-group expanded" data-group="co-hoi-hoc-bong">
-        <button type="button" class="s360-group-toggle" title="Cơ hội học bổng">
-          <svg class="s360-group-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="8" r="7"></circle>
-            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
-          </svg>
-          <span class="s360-group-label">CƠ HỘI HỌC BỔNG</span>
-          <svg class="s360-group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-        <div class="s360-group-items">
-          <button type="button" class="s360-subnav-btn" data-menu="ai-matches" data-target="section-ai-matches" title="Gợi ý AI riêng bạn">
-            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-            </svg>
-            <span class="s360-item-label">Gợi ý AI riêng bạn</span>
-            <span class="s360-menu-badge">18 mới</span>
-          </button>
           <button type="button" class="s360-subnav-btn" data-menu="catalog" data-target="section-catalog" title="Cổng TT học bổng">
             <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="2" y1="12" x2="22" y2="12"></line>
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
             </svg>
-            <span class="s360-item-label">Cổng TT học bổng</span>
+            <span class="s360-item-label">Cổng TT học bổng (7,949+)</span>
           </button>
-        </div>
-      </div>
-
-      <!-- 3. Menu Group: HỒ SƠ & ỨNG TUYỂN -->
-      <div class="s360-nav-group expanded" data-group="ho-so-ung-tuyen">
-        <button type="button" class="s360-group-toggle" title="Hồ sơ & Ứng tuyển">
-          <svg class="s360-group-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="8.5" cy="7" r="4"></circle>
-            <line x1="20" y1="8" x2="20" y2="14"></line>
-            <line x1="23" y1="11" x2="17" y2="11"></line>
-          </svg>
-          <span class="s360-group-label">HỒ SƠ & ỨNG TUYỂN</span>
-          <svg class="s360-group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-        <div class="s360-group-items">
-          <button type="button" class="s360-subnav-btn" data-menu="profile" data-target="section-profile" title="Nộp hồ sơ">
+          <button type="button" class="s360-subnav-btn" data-menu="profile" data-target="section-profile" title="Nộp & Đối soát CV">
             <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
               <line x1="16" y1="13" x2="8" y2="13"></line>
               <line x1="16" y1="17" x2="8" y2="17"></line>
             </svg>
-            <span class="s360-item-label">Nộp hồ sơ</span>
+            <span class="s360-item-label">Nộp & Đối soát CV</span>
+          </button>
+          <button type="button" class="s360-subnav-btn" data-menu="ai-matches" data-target="section-ai-matches" title="Gợi ý AI (Nhóm A-B-C)">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <span class="s360-item-label">Gợi ý AI (Nhóm A-B-C)</span>
+            <span class="s360-menu-badge">18 mới</span>
           </button>
           <button type="button" class="s360-subnav-btn" data-menu="tracker" data-target="section-tracker" title="Theo dõi tiến độ nộp">
             <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -274,28 +300,34 @@
             </svg>
             <span class="s360-item-label">Theo dõi ứng tuyển</span>
           </button>
+          <button type="button" class="s360-subnav-btn" data-menu="chat" data-target="section-chat" title="Trợ lý Du học AI 24/7">
+            <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span class="s360-item-label">Trợ lý Du học AI 24/7</span>
+          </button>
         </div>
       </div>
 
-      <!-- 4. Menu Group: TRỢ LÝ THÔNG MINH -->
-      <div class="s360-nav-group expanded" data-group="tro-ly-thong-minh">
-        <button type="button" class="s360-group-toggle" title="Trợ lý thông minh">
+      <!-- 4. Menu Group: HỆ THỐNG -->
+      <div class="s360-nav-group" data-group="he-thong">
+        <button type="button" class="s360-group-toggle" title="Hệ thống">
           <svg class="s360-group-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
-          <span class="s360-group-label">TRỢ LÝ THÔNG MINH</span>
+          <span class="s360-group-label">HỆ THỐNG</span>
           <svg class="s360-group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
         <div class="s360-group-items">
-          <button type="button" class="s360-subnav-btn" data-menu="chat" data-target="section-chat" title="Trợ lý Du học AI 24/7">
+          <button type="button" class="s360-subnav-btn" data-menu="cai-dat" data-role-view="settings" title="Cài đặt tài khoản">
             <svg class="s360-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 8V4H8"></path>
-              <rect x="4" y="8" width="16" height="12" rx="2"></rect>
-              <path d="M2 14h2M20 14h2M9 13v2M15 13v2"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
-            <span class="s360-item-label">Trợ lý AI Du học 24/7</span>
+            <span class="s360-item-label">Cài đặt tài khoản</span>
           </button>
         </div>
       </div>
@@ -354,7 +386,13 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </li>
           <li class="s360-breadcrumb-node">
-            <span class="s360-breadcrumb-link">Cơ hội học bổng</span>
+            <span class="s360-breadcrumb-link">Tài chính học vụ</span>
+          </li>
+          <li class="s360-breadcrumb-separator">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </li>
+          <li class="s360-breadcrumb-node">
+            <span class="s360-breadcrumb-link">Cơ hội học bổng & Gợi ý AI</span>
           </li>
           <li class="s360-breadcrumb-separator">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>

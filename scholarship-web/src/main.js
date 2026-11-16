@@ -4885,7 +4885,7 @@ function initStudent360Shell() {
     });
   });
 
-  // 5. Sidebar Navigation Items Click Handler (ScholarMatch Nav)
+  // 5. Sidebar Navigation Items Click Handler (Student 360 & Scholarship Nav)
   document.querySelectorAll('.s360-subnav-btn, .s360-nav-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const target = btn.dataset.target;
@@ -4896,12 +4896,17 @@ function initStudent360Shell() {
         switchTab('section-dashboard');
       } else if (menu === 'catalog' || menu === 'hoc-bong') {
         switchTab('section-catalog');
-      } else if (menu === 'ai-matches' || menu === 'profile') {
+      } else if (menu === 'profile') {
         switchTab('section-profile');
+      } else if (menu === 'ai-matches') {
+        switchTab('section-ai-matches');
       } else if (menu === 'tracker') {
         switchTab('section-tracker');
       } else if (menu === 'chat') {
         switchTab('section-chat');
+      } else if (btn.dataset.roleView) {
+        const title = btn.querySelector('.s360-item-label')?.textContent?.trim() || 'Chức năng';
+        showStudent360Toast(`ℹ️ Phân hệ ${title} đang kết nối trực tiếp với dữ liệu học vụ trên Student 360.`);
       }
       if (window.innerWidth < 1024) document.body.classList.remove('s360-sidebar-mobile-open');
     });
